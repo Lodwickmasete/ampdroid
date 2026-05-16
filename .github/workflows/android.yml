@@ -23,19 +23,25 @@ jobs:
           unzip gradle-6.9-bin.zip
           echo "$PWD/gradle-6.9/bin" >> $GITHUB_PATH
 
-      - name: Build APK
+      - name: Build FULL APK
         working-directory: draft/php
-        run: gradle assembleDebug
+        run: gradle assembleFullDebug
+
+      - name: Build LITE APK
+        working-directory: draft/php
+        run: gradle assembleLiteDebug
 
       - name: Get version
         id: version
         run: echo "VERSION=v$(date +%Y.%m.%d.%H%M)" >> $GITHUB_OUTPUT
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
-          name: Release ${{ steps.version.outputs.VERSION }}
-          files: draft/php/app/build/outputs/apk/debug/app-debug.apk
+          name: "Release ${{ steps.version.outputs.VERSION }}"
+          files: |
+            draft/php/app/build/outputs/apk/full/debug/app-full-debug.apk
+            draft/php/app/build/outputs/apk/lite/debug/app-lite-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
