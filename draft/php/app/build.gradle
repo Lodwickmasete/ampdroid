@@ -1,28 +1,52 @@
 plugins {
-	id 'com.android.application'
+    id 'com.android.application'
 }
 
 android {
-	compileSdkVersion 28
-	
-	useLibrary 'org.apache.http.legacy'
-	
-	defaultConfig {
-		applicationId "com.lodwickmasete.php"
-		minSdkVersion 21
-		targetSdkVersion 28
-		versionCode 1
-		versionName "1.0"
-	}
-	
-	buildTypes {
-		release {
-			minifyEnabled false
-			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-		}
-	}
+    compileSdkVersion 28
+
+    useLibrary 'org.apache.http.legacy'
+
+    defaultConfig {
+        applicationId "com.lodwickmasete.php"
+        minSdkVersion 21
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+    }
+
+    //FLAVORS
+    flavorDimensions "mode"
+
+    productFlavors {
+        full {
+            dimension "mode"
+        }
+
+        lite {
+            dimension "mode"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    //ASSET CONTROL
+    sourceSets {
+        full {
+            assets.srcDirs = ['src/main/assets']
+        }
+
+        lite {
+            assets.srcDirs = ['src/main/assets_lite']
+        }
+    }
 }
 
 dependencies {
-	implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
