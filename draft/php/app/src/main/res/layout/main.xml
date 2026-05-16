@@ -726,7 +726,7 @@
                             android:textColor="#7D8590"/>
                         <EditText android:id="@+id/txtMysqlPort"
                             android:layout_width="match_parent" android:layout_height="30dp"
-                            android:text="3307" android:textColor="#E6EDF3"
+                            android:text="3306" android:textColor="#E6EDF3"
                             android:textSize="11sp" android:fontFamily="monospace"
                             android:background="#21262D" android:inputType="number"
                             android:paddingStart="6dp" android:singleLine="true"/>
@@ -948,12 +948,19 @@
                 <!-- Download row -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:orientation="horizontal" android:layout_marginBottom="6dp">
-                    <EditText android:id="@+id/txtZipUrl"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1" android:hint="https://…/assets.zip"
-                        android:textColor="#E6EDF3" android:textColorHint="#3D444D"
-                        android:textSize="10sp" android:fontFamily="monospace"
-                        android:background="#21262D" android:paddingStart="8dp" android:singleLine="true"/>
+<EditText android:id="@+id/txtZipUrl"
+    android:layout_width="0dp"
+    android:layout_height="34dp"
+    android:layout_weight="1"
+    android:hint="https://…/assets.zip"
+    android:text="https://github.com/Lodwickmasete/ampdroid/releases/download/v1.0/assets_debug.zip"
+    android:textColor="#E6EDF3"
+    android:textColorHint="#3D444D"
+    android:textSize="10sp"
+    android:fontFamily="monospace"
+    android:background="#21262D"
+    android:paddingStart="8dp"
+    android:singleLine="true"/>
                     <TextView android:id="@+id/btnDownloadZip"
                         android:layout_width="80dp" android:layout_height="34dp"
                         android:text="⬇ DL" android:textSize="10sp"
@@ -1200,23 +1207,6 @@
                             android:clickable="true" android:focusable="true"
                             android:layout_marginEnd="5dp"/>
 
-                        <TextView android:id="@+id/btnChipFpmStatus"
-                            android:layout_width="wrap_content" android:layout_height="26dp"
-                            android:text="fpm status" android:textSize="9sp"
-                            android:fontFamily="monospace" android:textColor="#3FB950"
-                            android:background="#21262D" android:paddingStart="10dp"
-                            android:paddingEnd="10dp" android:gravity="center"
-                            android:clickable="true" android:focusable="true"
-                            android:layout_marginEnd="5dp"/>
-
-                        <TextView android:id="@+id/btnChipNetstat"
-                            android:layout_width="wrap_content" android:layout_height="26dp"
-                            android:text="netstat" android:textSize="9sp"
-                            android:fontFamily="monospace" android:textColor="#58A6FF"
-                            android:background="#21262D" android:paddingStart="10dp"
-                            android:paddingEnd="10dp" android:gravity="center"
-                            android:clickable="true" android:focusable="true"
-                            android:layout_marginEnd="5dp"/>
 
                         <TextView android:id="@+id/btnChipLs"
                             android:layout_width="wrap_content" android:layout_height="26dp"
