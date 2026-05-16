@@ -20,8 +20,9 @@ jobs:
       - name: Install Gradle
         run: sudo apt update && sudo apt install -y gradle
 
-      - name: Show project files
+      - name: Debug folder structure
         run: ls -R
 
       - name: Build Debug APK
-        run: gradle :app:assembleDebug
+        working-directory: draft/php
+        run: gradle assembleDebug
