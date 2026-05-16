@@ -146,8 +146,8 @@ public class MainActivity extends Activity {
     private LinearLayout layoutTerminalContainer; // for show/hide
 
     // Quick command chips
-    private TextView btnChipPhpV, btnChipPhpInfo, btnChipFpmStatus,
-                     btnChipNetstat, btnChipLs, btnChipErrorLog;
+    private TextView btnChipPhpV, btnChipPhpInfo,
+                     btnChipLs, btnChipErrorLog;
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Views — COLLAPSIBLE SECTIONS
@@ -294,8 +294,6 @@ public class MainActivity extends Activity {
         // Quick chips
         btnChipPhpV            = findViewById(R.id.btnChipPhpV);
         btnChipPhpInfo         = findViewById(R.id.btnChipPhpInfo);
-        btnChipFpmStatus       = findViewById(R.id.btnChipFpmStatus);
-        btnChipNetstat         = findViewById(R.id.btnChipNetstat);
         btnChipLs              = findViewById(R.id.btnChipLs);
         btnChipErrorLog        = findViewById(R.id.btnChipErrorLog);
 
@@ -589,36 +587,25 @@ public class MainActivity extends Activity {
         // ── Quick chips ──────────────────────────────────────────────────────
         btnChipPhpV.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) { executeCommand("php -v"); }
+            public void onClick(View v) { executeCommand("/data/data/com.lodwickmasete.php/files/bin/php-fpm -v"); }
         });
         btnChipPhpInfo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                executeCommand("php -r \"phpinfo();\" 2>&1 | head -30");
+                executeCommand("/data/data/com.lodwickmasete.php/files/bin/php-fpm -r \"phpinfo();\" 2>&1 | head -30");
             }
         });
-        btnChipFpmStatus.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                executeCommand("ps aux | grep php-fpm | grep -v grep");
-            }
-        });
-        btnChipNetstat.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                executeCommand("cat /proc/net/tcp 2>/dev/null || netstat -tulpn 2>&1 | head -20");
-            }
-        });
+
         btnChipLs.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                executeCommand("ls -la " + config.get(AppConfig.KEY_DOCUMENT_ROOT, DATA_DIR + "/www"));
+                executeCommand("ls " + config.get(AppConfig.KEY_DOCUMENT_ROOT, DATA_DIR + "/www"));
             }
         });
         btnChipErrorLog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                executeCommand("tail -30 " + config.get(AppConfig.KEY_ERROR_LOG, DATA_DIR + "/logs/apache2/error.log"));
+                executeCommand("tail -30 " + config.get(AppConfig.KEY_ERROR_LOG, DATA_DIR + "/logs/apache2/error_log"));
             }
         });
 
@@ -671,7 +658,7 @@ public class MainActivity extends Activity {
     }
 
     private void startAll() {
-        appendTerminal("[+] Starting all services...");
+       // appendTerminal("[+] Starting all services...");
         Map<String, String> env = buildEnv();
         scriptRunner.run(SCRIPT_START_ALL, env, new ScriptRunner.OutputListener() {
             @Override public void onLine(String line) { appendTerminal(line); }
@@ -685,7 +672,7 @@ public class MainActivity extends Activity {
     }
 
     private void startApache() {
-        appendTerminal("[+] Starting Apache...");
+       // appendTerminal("[+] Starting Apache...");
         Map<String, String> env = buildEnv();
         scriptRunner.run(SCRIPT_START_APACHE, env, new ScriptRunner.OutputListener() {
             @Override public void onLine(String line) { appendTerminal(line); }
@@ -702,7 +689,7 @@ public class MainActivity extends Activity {
     }
 
     private void startPhpFpm() {
-        appendTerminal("[+] Starting PHP-FPM...");
+       // appendTerminal("[+] Starting PHP-FPM...");
         Map<String, String> env = buildEnv();
         scriptRunner.run(SCRIPT_START_FPM, env, new ScriptRunner.OutputListener() {
             @Override public void onLine(String line) { appendTerminal(line); }
@@ -718,7 +705,7 @@ public class MainActivity extends Activity {
     }
 
     private void startDatabase() {
-        appendTerminal("[+] Starting MariaDB...");
+     //   appendTerminal("[+] Starting MariaDB...");
         Map<String, String> env = buildEnv();
         scriptRunner.run(SCRIPT_START_DB, env, new ScriptRunner.OutputListener() {
             @Override public void onLine(String line) { appendTerminal(line); }
@@ -735,7 +722,7 @@ public class MainActivity extends Activity {
 
     private void stopService(String stopScript, final String name,
                               final boolean isApache, final boolean isPhp, final boolean isDb) {
-        appendTerminal("[+] Stopping " + name + "...");
+        //appendTerminal("[+] Stopping " + name + "...");
         scriptRunner.run(stopScript, buildEnv(), new ScriptRunner.OutputListener() {
             @Override public void onLine(String line) { appendTerminal(line); }
             @Override public void onDone(int code) {
@@ -874,7 +861,12 @@ public class MainActivity extends Activity {
         appendTerminal(ok ? "[+] Config saved to app_config.json" : "[!] Failed to save config");
         Toast.makeText(this, ok ? "Config saved" : "Save failed", Toast.LENGTH_SHORT).show();
 
-        savePhpIni();
+       /*no longer using savePhpIni(),
+        php_custom.ini is now php.ini.tmp generated by
+        start_php_fpm.sh
+        other settings are in /data/user/0/com.lodwickmasete.php/files/app_config.json
+        //savePhpIni();
+        */
     }
 
     private void loadConfigToUi() {
@@ -909,6 +901,7 @@ public class MainActivity extends Activity {
         appendTerminal("[+] Config loaded from app_config.json");
     }
 
+/*NOT USED ANYMORE*/
     private void savePhpIni() {
         try {
             File phpIni = new File(DATA_DIR, "php_custom.ini");
@@ -1004,8 +997,8 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 try {
-                    File phpBinary = new File(DATA_DIR, "bin/php");
-                    String ldPath  = DATA_DIR + "/lib/common:" + DATA_DIR + "/lib/php";
+                    File phpBinary = new File(DATA_DIR, "bin/php-fpm");
+                    String ldPath  = DATA_DIR + "/lib/common:" + DATA_DIR + "/lib/php-fpm";
                     File tmpDir    = new File(DATA_DIR, "tmp");
                     if (!tmpDir.exists()) tmpDir.mkdirs();
 
@@ -1156,7 +1149,7 @@ private void downloadAndExtractZip() {
                     }
                 });
 
-                //ONLY extract — NO DELETE HERE
+                // ✅ ONLY extract — NO DELETE HERE
                 extractZipFile(dest);
 
             } catch (final Exception e) {
