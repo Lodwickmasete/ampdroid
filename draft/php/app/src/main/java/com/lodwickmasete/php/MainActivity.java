@@ -495,11 +495,14 @@ public class MainActivity extends Activity {
             public void onClick(View v) { downloadAndExtractZip(); }
         });
 
+/*
+  //no longer takjng input from user
         btnExtractZip.setOnClickListener(new View.OnClickListener() {
             @Override
+
             public void onClick(View v) { extractZipFile(); }
         });
-
+*/
         // ── Browse buttons ──────────────────────────────────────────────────
         btnSelectDocRoot.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -1075,99 +1078,190 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    private void downloadAndExtractZip() {
-        final String url      = txtZipUrl.getText().toString().trim();
-        final String destPath = txtZipPath.getText().toString().trim();
-        if (url.isEmpty() || destPath.isEmpty()) {
-            appendTerminal("[!] Enter URL and destination path");
-            return;
-        }
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() { progressDownload.setVisibility(View.VISIBLE); progressDownload.setProgress(0); }
-        });
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    appendTerminal("[+] Downloading: " + url);
-                    File dest = new File(destPath);
-                    HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-                    conn.setConnectTimeout(30000);
-                    conn.setReadTimeout(60000);
-                    final long total = conn.getContentLength();
-                    InputStream in  = conn.getInputStream();
-                    FileOutputStream out = new FileOutputStream(dest);
-                    byte[] buf = new byte[8192];
-                    int n; long downloaded = 0;
-                    while ((n = in.read(buf)) != -1) {
-                        out.write(buf, 0, n);
-                        downloaded += n;
-                        if (total > 0) {
-                            final int pct = (int)(downloaded * 100 / total);
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() { progressDownload.setProgress(pct); }
-                            });
-                        }
-                    }
-                    out.close(); in.close();
-                    appendTerminal("[+] Download complete: " + dest.getAbsolutePath());
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() { progressDownload.setProgress(100); }
-                    });
-                    extractZipFile();
-                } catch (Exception e) {
-                    appendTerminal("[!] Download error: " + e.getMessage());
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() { progressDownload.setVisibility(View.GONE); }
-                    });
-                }
-            }
-        }).start();
+
+private void downloadAndExtractZip() {
+
+    final String url = txtZipUrl.getText().toString().trim();
+
+    if (url.isEmpty()) {
+        appendTerminal("[!] Enter URL");
+        return;
     }
 
-    private void extractZipFile() {
-        final String zipPath = txtZipPath.getText().toString().trim();
-        if (zipPath.isEmpty()) { appendTerminal("[!] Enter ZIP path"); return; }
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    File zipFile = new File(zipPath);
-                    if (!zipFile.exists()) { appendTerminal("[!] ZIP not found: " + zipPath); return; }
-                    appendTerminal("[+] Extracting: " + zipPath);
-                    File out = getFilesDir();
-                    try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
-                        ZipEntry entry;
-                        while ((entry = zis.getNextEntry()) != null) {
-                            File f = new File(out, entry.getName());
-                            if (entry.isDirectory()) { f.mkdirs(); }
-                            else {
-                                if (f.getParentFile() != null) f.getParentFile().mkdirs();
-                                FileOutputStream fos = new FileOutputStream(f);
-                                byte[] buf = new byte[8192]; int n;
-                                while ((n = zis.read(buf)) != -1) fos.write(buf, 0, n);
-                                fos.close();
+    runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+            progressDownload.setVisibility(View.VISIBLE);
+            progressDownload.setProgress(0);
+        }
+    });
+
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+
+            FileOutputStream out = null;
+            InputStream in = null;
+            File dest = null;
+
+            try {
+                appendTerminal("[+] Downloading: " + url);
+
+                File appDir = getFilesDir();
+
+                String fileName = "assets.zip";
+                if (url.contains("/")) {
+                    fileName = url.substring(url.lastIndexOf("/") + 1);
+                }
+
+                dest = new File(appDir, fileName);
+
+                HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+                conn.setConnectTimeout(30000);
+                conn.setReadTimeout(60000);
+
+                long total = conn.getContentLengthLong();
+
+                in = conn.getInputStream();
+                out = new FileOutputStream(dest);
+
+                byte[] buf = new byte[8192];
+                int n;
+                long downloaded = 0;
+
+                while ((n = in.read(buf)) != -1) {
+                    out.write(buf, 0, n);
+                    downloaded += n;
+
+                    if (total > 0) {
+                        final int pct = (int) (downloaded * 100 / total);
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressDownload.setProgress(pct);
                             }
-                            zis.closeEntry();
-                            appendTerminal("[+] " + entry.getName());
-                        }
+                        });
                     }
-                    setPermissions(out);
-                    appendTerminal("[+] Extraction complete");
+                }
+
+                out.flush();
+
+                appendTerminal("[+] Download complete: " + dest.getAbsolutePath());
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        progressDownload.setProgress(100);
+                    }
+                });
+
+                // ✅ ONLY extract — NO DELETE HERE
+                extractZipFile(dest);
+
+            } catch (final Exception e) {
+
+                appendTerminal("[!] Download error: " + e.getMessage());
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        progressDownload.setVisibility(View.GONE);
+                    }
+                });
+
+            } finally {
+
+                try { if (in != null) in.close(); } catch (Exception ignored) {}
+                try { if (out != null) out.close(); } catch (Exception ignored) {}
+            }
+        }
+    }).start();
+}
+
+
+
+private void extractZipFile(final File zipFile) {
+
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+
+            if (zipFile == null || !zipFile.exists()) {
+                appendTerminal("[!] ZIP not found: " + zipFile);
+                return;
+            }
+
+            appendTerminal("[+] Extracting: " + zipFile.getAbsolutePath());
+
+            File outDir = getFilesDir();
+
+            ZipInputStream zis = null;
+
+            try {
+                zis = new ZipInputStream(new FileInputStream(zipFile));
+
+                ZipEntry entry;
+                byte[] buffer = new byte[8192];
+
+                while ((entry = zis.getNextEntry()) != null) {
+
+                    File outFile = new File(outDir, entry.getName());
+
+                    if (entry.isDirectory()) {
+                        outFile.mkdirs();
+                        zis.closeEntry();
+                        continue;
+                    }
+
+                    File parent = outFile.getParentFile();
+                    if (parent != null && !parent.exists()) {
+                        parent.mkdirs();
+                    }
+
+                    FileOutputStream fos = new FileOutputStream(outFile);
+
+                    int len;
+                    while ((len = zis.read(buffer)) != -1) {
+                        fos.write(buffer, 0, len);
+                    }
+
+                    fos.flush();
+                    fos.close();
+
+                    zis.closeEntry();
+
+                    final String name = entry.getName();
                     runOnUiThread(new Runnable() {
                         @Override
-                        public void run() { progressDownload.setVisibility(View.GONE); }
+                        public void run() {
+                            appendTerminal("[+] " + name);
+                        }
                     });
-                } catch (Exception e) {
-                    appendTerminal("[!] Extract error: " + e.getMessage());
                 }
+
+                setPermissions(outDir);
+
+                appendTerminal("[+] Extraction complete");
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        progressDownload.setVisibility(View.GONE);
+                    }
+                });
+
+            } catch (final Exception e) {
+                appendTerminal("[!] Extract error: " + e.getMessage());
+
+            } finally {
+                try {
+                    if (zis != null) zis.close();
+                } catch (Exception ignored) {}
             }
-        }).start();
-    }
+        }
+    }).start();
+}
 
     // ─────────────────────────────────────────────────────────────────────────
     //  File / Directory Picker
