@@ -17,14 +17,18 @@ jobs:
           distribution: temurin
           java-version: 11
 
-      - name: Show project structure (debug)
-        run: ls -R
+      - name: Install Gradle 6.9
+        run: |
+          wget https://services.gradle.org/distributions/gradle-6.9-bin.zip
+          unzip gradle-6.9-bin.zip
+          echo "$PWD/gradle-6.9/bin" >> $GITHUB_PATH
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x ampdroid/gradlew
+      - name: Verify project structure
+        run: ls -R ampdroid
 
       - name: Build FULL APK
-        run: cd ampdroid && ./gradlew assembleFullDebug
+        working-directory: ampdroid
+        run: gradle assembleFullDebug
 
       - name: Get version
         id: version
