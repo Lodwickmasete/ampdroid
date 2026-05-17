@@ -17,13 +17,14 @@ jobs:
           distribution: temurin
           java-version: 11
 
+      - name: Show project structure (debug)
+        run: ls -R
+
       - name: Grant execute permission for gradlew
-        working-directory: ampdroid
-        run: chmod +x gradlew
+        run: chmod +x ampdroid/gradlew
 
       - name: Build FULL APK
-        working-directory: ampdroid
-        run: ./gradlew assembleFullDebug
+        run: cd ampdroid && ./gradlew assembleFullDebug
 
       - name: Get version
         id: version
