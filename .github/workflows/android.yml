@@ -34,6 +34,7 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
           name: "Release ${{ steps.version.outputs.VERSION }}"
+          overwrite_files: true
           files: |
             ampdroid/app/build/outputs/apk/full/debug/app-full-debug.apk
         env:
