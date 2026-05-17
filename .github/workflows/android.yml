@@ -17,19 +17,13 @@ jobs:
           distribution: temurin
           java-version: 11
 
-      - name: Install Gradle 6.9
-        run: |
-          wget https://services.gradle.org/distributions/gradle-6.9-bin.zip
-          unzip gradle-6.9-bin.zip
-          echo "$PWD/gradle-6.9/bin" >> $GITHUB_PATH
+      - name: Grant execute permission for gradlew
+        working-directory: ampdroid
+        run: chmod +x gradlew
 
       - name: Build FULL APK
-        working-directory: draft/php
-        run: gradle assembleFullDebug
-
-      - name: Build LITE APK
-        working-directory: draft/php
-        run: gradle assembleLiteDebug
+        working-directory: ampdroid
+        run: ./gradlew assembleFullDebug
 
       - name: Get version
         id: version
@@ -41,7 +35,6 @@ jobs:
           tag_name: ${{ steps.version.outputs.VERSION }}
           name: "Release ${{ steps.version.outputs.VERSION }}"
           files: |
-            draft/php/app/build/outputs/apk/full/debug/app-full-debug.apk
-            draft/php/app/build/outputs/apk/lite/debug/app-lite-debug.apk
+            ampdroid/app/build/outputs/apk/full/debug/app-full-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
