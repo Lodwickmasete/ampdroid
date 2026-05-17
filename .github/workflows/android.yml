@@ -23,11 +23,10 @@ jobs:
           unzip gradle-6.9-bin.zip
           echo "$PWD/gradle-6.9/bin" >> $GITHUB_PATH
 
-      - name: Verify project structure
-        run: ls -R ampdroid
+      - name: Verify project
+        run: ls -R
 
       - name: Build FULL APK
-        working-directory: ampdroid
         run: gradle assembleFullDebug
 
       - name: Get version
@@ -41,6 +40,6 @@ jobs:
           name: "Release ${{ steps.version.outputs.VERSION }}"
           overwrite_files: true
           files: |
-            ampdroid/app/build/outputs/apk/full/debug/app-full-debug.apk
+            app/build/outputs/apk/full/debug/app-full-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
