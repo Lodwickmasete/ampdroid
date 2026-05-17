@@ -23,11 +23,11 @@ jobs:
           unzip gradle-6.9-bin.zip
           echo "$PWD/gradle-6.9/bin" >> $GITHUB_PATH
 
-      - name: Verify project
+      - name: Show project structure (debug)
         run: ls -R
 
-      - name: Build FULL APK
-        run: gradle assembleFullDebug
+      - name: Build APK (DEBUG)
+        run: gradle assembleDebug
 
       - name: Get version
         id: version
@@ -40,6 +40,6 @@ jobs:
           name: "Release ${{ steps.version.outputs.VERSION }}"
           overwrite_files: true
           files: |
-            app/build/outputs/apk/full/debug/app-full-debug.apk
+            app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
