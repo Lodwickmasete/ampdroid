@@ -26,20 +26,78 @@ jobs:
       - name: Show project structure (debug)
         run: ls -R
 
-      - name: Build APK (DEBUG)
-        run: gradle assembleDebug
-
-      - name: Get version
+      # =========================
+      # VERSION (1.x.x FORMAT)
+      # =========================
+      - name: Generate version
         id: version
-        run: echo "VERSION=v$(date +%Y.%m.%d.%H%M)" >> $GITHUB_OUTPUT
+        run: |
+          MAJOR=1
+          MINOR=0
+          PATCH=${{ github.run_number }}
+          echo "VERSION=v$MAJOR.$MINOR.$PATCH" >> $GITHUB_OUTPUT
 
+      # =========================
+      # BASE APK (NO ASSETS)
+      # =========================
+      - name: Build base APK
+        run: gradle clean assembleDebug
+
+      - name: Save base APK
+        run: |
+          mkdir -p output
+          cp app/build/outputs/apk/debug/app-debug.apk output/app-base.apk
+
+      # =========================
+      # DOWNLOAD + EXTRACT ASSETS
+      # =========================
+      - name: Download assets
+        run: |
+          wget -O assets.zip https://github.com/Lodwickmasete/ampdroid/releases/download/v1.0/assets_debug.zip
+
+      - name: Extract assets
+        run: |
+          rm -rf app/src/main/assets
+          mkdir -p app/src/main/assets
+          unzip -o assets.zip -d app/src/main/assets
+
+      # =========================
+      # ASSETS APK
+      # =========================
+      - name: Build assets APK
+        run: gradle clean assembleDebug
+
+      - name: Save assets APK
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk output/app-assets.apk
+
+      # =========================
+      # RELEASE NOTES
+      # =========================
+      - name: Create release notes
+        run: |
+          echo "## 🚀 Android Release" > release_notes.md
+          echo "" >> release_notes.md
+          echo "### 👤 Author: Lodwick Masete" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### 📦 Version: ${{ steps.version.outputs.VERSION }}" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### 📱 Builds:" >> release_notes.md
+          echo "- Base APK (no assets)" >> release_notes.md
+          echo "- Assets APK (includes extracted assets)" >> release_notes.md
+
+      # =========================
+      # GITHUB RELEASE
+      # =========================
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
-          name: "Release ${{ steps.version.outputs.VERSION }}"
+          name: "Ampdroid ${{ steps.version.outputs.VERSION }}"
+          body_path: release_notes.md
           overwrite_files: true
           files: |
-            app/build/outputs/apk/debug/app-debug.apk
+            output/app-base.apk
+            output/app-assets.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
