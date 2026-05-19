@@ -125,9 +125,9 @@ public class MainActivity extends Activity {
     // ─────────────────────────────────────────────────────────────────────────
     //  Views — ASSET MANAGEMENT section
     // ─────────────────────────────────────────────────────────────────────────
-    private EditText  txtZipUrl, txtZipPath;
+    private EditText  txtZipUrl;
     private ProgressBar progressDownload;
-    private TextView  btnDownloadZip, btnExtractZip, btnCopyAssets;
+    private TextView  btnDownloadZip, btnExtractAssetsZip, btnCopyAssets;
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Views — PHP CODE EDITOR shortcut
@@ -202,7 +202,7 @@ public class MainActivity extends Activity {
         loadConfigToUi();
         requestStoragePermission();
         checkAssets();
-
+        initializeButtonStates();
         appendTerminal("PHP Server Manager v3.0 — ready");
         appendTerminal("Scripts: " + new File(getFilesDir(), "scripts").getAbsolutePath());
     }
@@ -271,10 +271,9 @@ public class MainActivity extends Activity {
 
         // Assets section
         txtZipUrl              = findViewById(R.id.txtZipUrl);
-        txtZipPath             = findViewById(R.id.txtZipPath);
         progressDownload       = findViewById(R.id.progressDownload);
         btnDownloadZip         = findViewById(R.id.btnDownloadZip);
-        btnExtractZip          = findViewById(R.id.btnExtractZip);
+        btnExtractAssetsZip    = findViewById(R.id.btnExtractAssetsZip);
         btnCopyAssets          = findViewById(R.id.btnCopyAssets);
 
         // Editor shortcut
@@ -317,18 +316,47 @@ public class MainActivity extends Activity {
         btnSaveConfig          = findViewById(R.id.btnSaveConfig);
         btnLoadConfig          = findViewById(R.id.btnLoadConfig);
 
-        // Settings button → EditorActivity
+        // Settings button → SetttingsActivity
         TextView btnSettings   = findViewById(R.id.btnSettings);
         btnSettings.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, EditorActivity.class));
+                startActivity(new Intent(MainActivity.this, SetupActivity.class));
             }
         });
 
         txtTerminal.setMovementMethod(new ScrollingMovementMethod());
         txtTerminal.setTextIsSelectable(true);
     }
+
+
+private void initializeButtonStates() {
+    // Check for phpmyadmin.zip
+    File phpMyAdminZip = new File(getFilesDir(), "phpmyadmin.zip");
+    boolean zipExists = phpMyAdminZip.exists();
+    
+    // Check for phpmyadmin folder
+    File phpMyAdminFolder = new File(getFilesDir(), "phpmyadmin");
+    boolean folderExists = phpMyAdminFolder.exists() && phpMyAdminFolder.isDirectory();
+
+// Check for phpmyadmin folder
+File dBFolder = new File(getFilesDir(), "db");
+boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
+
+
+    // Enable/disable install button based on zip and folder existence
+    btnInstallPhpMyAdmin.setEnabled((zipExists && !folderExists) && (!dbRunning));
+    
+    // Enable start MySQL button only if phpmyadmin folder exists
+    btnStartMySQL.setEnabled((folderExists && dBfolderExists) && !dbRunning);
+    
+    // Disable stop button initially
+    btnStopMySQL.setEnabled(dbRunning);
+    
+    // Disable open button initially until phpmyadmin is properly installed
+    btnOpenPhpMyAdmin.setEnabled(folderExists && (apacheRunning && phpRunning && dbRunning));
+}
+
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Collapsible Sections
@@ -493,14 +521,16 @@ public class MainActivity extends Activity {
             public void onClick(View v) { downloadAndExtractZip(); }
         });
 
-/*
-  //no longer takjng input from user
-        btnExtractZip.setOnClickListener(new View.OnClickListener() {
+
+  //no longer takng input from user
+        btnExtractAssetsZip.setOnClickListener(new View.OnClickListener() {
             @Override
 
-            public void onClick(View v) { extractZipFile(); }
+            public void onClick(View v) { 
+                        startActivity(new Intent(MainActivity.this, SetupActivity.class));
+                    }
         });
-*/
+
         // ── Browse buttons ──────────────────────────────────────────────────
         btnSelectDocRoot.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -587,12 +617,12 @@ public class MainActivity extends Activity {
         // ── Quick chips ──────────────────────────────────────────────────────
         btnChipPhpV.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) { executeCommand("/data/data/com.lodwickmasete.php/files/bin/php-fpm -v"); }
+            public void onClick(View v) { executeCommand("/data/data/com.lodwickmasete.php/files/fpm/bin/php-fpm -v"); }
         });
         btnChipPhpInfo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                executeCommand("/data/data/com.lodwickmasete.php/files/bin/php-fpm -r \"phpinfo();\" 2>&1 | head -30");
+                executeCommand("/data/data/com.lodwickmasete.php/files/fpm/bin/php-fpm -r \"phpinfo();\" 2>&1 | head -30");
             }
         });
 
@@ -686,6 +716,7 @@ public class MainActivity extends Activity {
         // optimistic — Apache forks and exits 0 quickly
         apacheRunning = true;
         updateApacheStatusView();
+        initializeButtonStates();
     }
 
     private void startPhpFpm() {
@@ -702,6 +733,7 @@ public class MainActivity extends Activity {
         });
         phpRunning = true;
         updatePhpStatusView();
+        initializeButtonStates();
     }
 
     private void startDatabase() {
@@ -718,6 +750,7 @@ public class MainActivity extends Activity {
         });
         dbRunning = true;
         updateDbStatusView();
+        initializeButtonStates();
     }
 
     private void stopService(String stopScript, final String name,
@@ -730,9 +763,11 @@ public class MainActivity extends Activity {
                 if (isPhp)    { phpRunning    = false; updatePhpStatusView(); }
                 if (isDb)     { dbRunning     = false; updateDbStatusView(); }
                 appendTerminal("[+] " + name + " stopped.");
+                initializeButtonStates();
             }
             @Override public void onError(String msg) { appendTerminal("[!] " + msg); }
         });
+
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -815,9 +850,9 @@ public class MainActivity extends Activity {
     // ─────────────────────────────────────────────────────────────────────────
 
     private void installPhpMyAdmin() {
-        appendTerminal("[+] phpMyAdmin — download it from https://www.phpmyadmin.net/");
-        appendTerminal("[+] Extract into: " + config.get(AppConfig.KEY_DOCUMENT_ROOT, DATA_DIR + "/www") + "/phpmyadmin/");
-        Toast.makeText(this, "Download phpMyAdmin and extract to htdocs/phpmyadmin", Toast.LENGTH_LONG).show();
+        extractZipFile(new File(getFilesDir(), "/phpmyadmin.zip"));
+        extractZipFile(new File(getFilesDir(), "/db.zip"));
+        appendTerminal("[+] phpMyAdmin — download it from https://www.phpmyadmin.net/ if not found");
     }
 
     private void openPhpMyAdmin() {
@@ -1048,6 +1083,65 @@ public class MainActivity extends Activity {
     //  Asset Management
     // ─────────────────────────────────────────────────────────────────────────
 
+private void copyAssetsToAppDirectory() {
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+            try {
+                String[] files = getAssets().list("");
+                File destDir = getFilesDir();
+                
+                if (files == null || files.length == 0) {
+                    appendTerminal("[!] No assets found");
+                    return;
+                }
+                
+                appendTerminal("[+] Copying assets to " + destDir.getAbsolutePath());
+                
+                for (String fileName : files) {
+                    File destFile = new File(destDir, fileName);
+                    
+                    // Skip if already exists
+                    if (destFile.exists()) {
+                        appendTerminal("[•] Skipping: " + fileName);
+                        continue;
+                    }
+                    
+                    try {
+                        InputStream in = getAssets().open(fileName);
+                        OutputStream out = new FileOutputStream(destFile);
+                        
+                        byte[] buffer = new byte[8192];
+                        int read;
+                        while ((read = in.read(buffer)) != -1) {
+                            out.write(buffer, 0, read);
+                        }
+                        
+                        in.close();
+                        out.close();
+                        
+                        appendTerminal("[+] Copied: " + fileName);
+                    } catch (IOException e) {
+                        appendTerminal("[!] Failed: " + fileName);
+                    }
+                }
+                
+                appendTerminal("[+] Copy complete");
+                
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        initializeButtonStates();
+                    }
+                });
+                
+            } catch (IOException e) {
+                appendTerminal("[!] Error: " + e.getMessage());
+            }
+        }
+    }).start();
+}
+
     private void copyAssetsFromExternalStorage() {
         new Thread(new Runnable() {
             @Override
@@ -1064,6 +1158,7 @@ public class MainActivity extends Activity {
                     copyDirectory(src, dest);
                     setPermissions(dest);
                     appendTerminal("[+] Copy complete");
+                    initializeButtonStates();
                 } catch (Exception e) {
                     appendTerminal("[!] Copy error: " + e.getMessage());
                 }
@@ -1149,7 +1244,7 @@ private void downloadAndExtractZip() {
                     }
                 });
 
-                // ✅ ONLY extract — NO DELETE HERE
+                //ONLY extract — NO DELETE HERE
                 extractZipFile(dest);
 
             } catch (final Exception e) {
@@ -1228,7 +1323,7 @@ private void extractZipFile(final File zipFile) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            appendTerminal("[+] " + name);
+                            //appendTerminal("[+] " + name);
                         }
                     });
                 }
@@ -1351,11 +1446,10 @@ private void extractZipFile(final File zipFile) {
     }
 
     private void setPermissions(File dir) {
-        File php   = new File(dir, "bin/php");
-        File httpd = new File(dir, "bin/httpd");
-        File fpm   = new File(dir, "bin/php-fpm");
+        File httpd = new File(dir, "Apachebin/httpd");
+        File fpm   = new File(dir, "fpm/bin/php-fpm");
         File db    = new File(dir, "db/bin/mariadbd");
-        for (File b : new File[]{php, httpd, fpm, db}) {
+        for (File b : new File[]{httpd, fpm, db}) {
             if (b.exists()) {
                 b.setExecutable(true, false);
                 appendTerminal("[+] chmod +x " + b.getName());
