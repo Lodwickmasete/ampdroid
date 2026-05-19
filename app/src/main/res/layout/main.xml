@@ -685,20 +685,20 @@
                 <!-- DB controls -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:orientation="horizontal" android:layout_marginBottom="12dp">
-                    <TextView android:id="@+id/btnStartMySQL"
-                        android:layout_width="0dp" android:layout_height="36dp"
-                        android:layout_weight="1" android:text="▶ Start MySQL"
-                        android:textSize="11sp" android:fontFamily="monospace"
-                        android:textColor="#FFFFFF" android:background="#238636"
-                        android:gravity="center" android:clickable="true"
-                        android:focusable="true" android:layout_marginEnd="4dp"/>
-                    <TextView android:id="@+id/btnStopMySQL"
-                        android:layout_width="0dp" android:layout_height="36dp"
-                        android:layout_weight="1" android:text="■ Stop MySQL"
-                        android:textSize="11sp" android:fontFamily="monospace"
-                        android:textColor="#FFFFFF" android:background="#DA3633"
-                        android:gravity="center" android:clickable="true"
-                        android:focusable="true" android:layout_marginStart="4dp"/>
+<TextView android:id="@+id/btnStartMySQL"
+    android:layout_width="0dp" android:layout_height="36dp"
+    android:layout_weight="1" android:text="▶ Start MySQL"
+    android:textSize="11sp" android:fontFamily="monospace"
+    android:textColor="#FFFFFF" android:background="@drawable/button_success"
+    android:gravity="center" android:clickable="true"
+    android:focusable="true" android:layout_marginEnd="4dp"/>
+<TextView android:id="@+id/btnStopMySQL"
+    android:layout_width="0dp" android:layout_height="36dp"
+    android:layout_weight="1" android:text="■ Stop MySQL"
+    android:textSize="11sp" android:fontFamily="monospace"
+    android:textColor="#FFFFFF" android:background="@drawable/button_danger"
+    android:gravity="center" android:clickable="true"
+    android:focusable="true" android:layout_marginStart="4dp"/>
                 </LinearLayout>
 
                 <!-- MySQL conn info -->
@@ -748,14 +748,14 @@
                         android:layout_width="0dp" android:layout_height="36dp"
                         android:layout_weight="1" android:text="Install"
                         android:textSize="11sp" android:fontFamily="monospace"
-                        android:textColor="#58A6FF" android:background="#21262D"
+                        android:textColor="#FFFFFF" android:background="@drawable/button_state"
                         android:gravity="center" android:clickable="true"
                         android:focusable="true" android:layout_marginEnd="4dp"/>
                     <TextView android:id="@+id/btnOpenPhpMyAdmin"
                         android:layout_width="0dp" android:layout_height="36dp"
                         android:layout_weight="1" android:text="Open ↗"
                         android:textSize="11sp" android:fontFamily="monospace"
-                        android:textColor="#FFFFFF" android:background="#1F6FEB"
+                        android:textColor="#FFFFFF"     android:background="@drawable/button_state"
                         android:gravity="center" android:clickable="true"
                         android:focusable="true" android:layout_marginStart="4dp"/>
                 </LinearLayout>
@@ -776,7 +776,9 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:layout_marginBottom="1dp"
-                android:layout_marginTop="6dp">
+                android:layout_marginTop="6dp"
+                android:visibility="gone"
+                >
 
                 <TextView android:layout_width="22dp" android:layout_height="wrap_content"
                     android:text="📡" android:textSize="14sp" android:layout_marginEnd="8dp"/>
@@ -818,20 +820,23 @@
 
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:orientation="horizontal" android:layout_marginBottom="12dp">
-                    <TextView android:id="@+id/btnStartFtp"
-                        android:layout_width="0dp" android:layout_height="36dp"
-                        android:layout_weight="1" android:text="▶ Start FTP"
-                        android:textSize="11sp" android:fontFamily="monospace"
-                        android:textColor="#FFFFFF" android:background="#238636"
-                        android:gravity="center" android:clickable="true"
-                        android:focusable="true" android:layout_marginEnd="4dp"/>
-                    <TextView android:id="@+id/btnStopFtp"
-                        android:layout_width="0dp" android:layout_height="36dp"
-                        android:layout_weight="1" android:text="■ Stop FTP"
-                        android:textSize="11sp" android:fontFamily="monospace"
-                        android:textColor="#FFFFFF" android:background="#DA3633"
-                        android:gravity="center" android:clickable="true"
-                        android:focusable="true" android:layout_marginStart="4dp"/>
+
+<TextView android:id="@+id/btnStartFtp"
+    android:layout_width="0dp" android:layout_height="36dp"
+    android:layout_weight="1" android:text="▶ Start FTP"
+    android:textSize="11sp" android:fontFamily="monospace"
+    android:textColor="#FFFFFF" android:background="@drawable/button_success"
+    android:gravity="center" android:clickable="true"
+    android:focusable="true" android:layout_marginEnd="4dp"/>
+
+
+<TextView android:id="@+id/btnStopFtp"
+    android:layout_width="0dp" android:layout_height="36dp"
+    android:layout_weight="1" android:text="■ Stop FTP"
+    android:textSize="11sp" android:fontFamily="monospace"
+    android:textColor="#FFFFFF" android:background="@drawable/button_danger"
+    android:gravity="center" android:clickable="true"
+    android:focusable="true" android:layout_marginStart="4dp"/>
                 </LinearLayout>
 
                 <!-- FTP Settings -->
@@ -973,19 +978,14 @@
                 <!-- Extract row -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:orientation="horizontal" android:layout_marginBottom="8dp">
-                    <EditText android:id="@+id/txtZipPath"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1" android:hint="/sdcard/assets.zip"
-                        android:textColor="#E6EDF3" android:textColorHint="#3D444D"
-                        android:textSize="10sp" android:fontFamily="monospace"
-                        android:background="#21262D" android:paddingStart="8dp" android:singleLine="true"/>
-                    <TextView android:id="@+id/btnExtractZip"
-                        android:layout_width="80dp" android:layout_height="34dp"
+
+                    <TextView android:id="@+id/btnExtractAssetsZip"
+                        android:layout_width="match_parent" android:layout_height="36dp"
                         android:text="📂 Unzip" android:textSize="10sp"
                         android:fontFamily="monospace" android:textColor="#FFFFFF"
                         android:background="#9E6A03" android:gravity="center"
                         android:clickable="true" android:focusable="true"
-                        android:layout_marginStart="6dp"/>
+                        />
                 </LinearLayout>
 
                 <!-- Progress -->
@@ -1105,7 +1105,7 @@
                         android:background="#3FB950" android:layout_marginStart="5dp"/>
 
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:text="php-server — bash"
+                        android:layout_weight="1" android:text="Ampdroid bash"
                         android:textSize="9sp" android:fontFamily="monospace"
                         android:textColor="#7D8590" android:gravity="center"/>
 
@@ -1166,13 +1166,13 @@
                         android:singleLine="true" android:imeOptions="actionDone"
                         android:paddingStart="4dp"/>
 
-                    <TextView android:id="@+id/btnExecute"
-                        android:layout_width="60dp" android:layout_height="34dp"
-                        android:text="Run ▶" android:textSize="10sp"
-                        android:fontFamily="monospace" android:textColor="#FFFFFF"
-                        android:background="#1F6FEB" android:gravity="center"
-                        android:clickable="true" android:focusable="true"
-                        android:layout_marginStart="6dp"/>
+<TextView android:id="@+id/btnExecute"
+    android:layout_width="60dp" android:layout_height="34dp"
+    android:text="Run ▶" android:textSize="10sp"
+    android:fontFamily="monospace" android:textColor="#FFFFFF"
+    android:background="@drawable/button_state" android:gravity="center"
+    android:clickable="true" android:focusable="true"
+    android:layout_marginStart="6dp"/>
                 </LinearLayout>
 
                 <!-- Quick command chips -->
