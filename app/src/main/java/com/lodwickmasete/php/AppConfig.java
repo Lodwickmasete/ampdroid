@@ -147,7 +147,7 @@ public class AppConfig {
         putDefault(KEY_PHP_MODE,        "fpm");
         putDefault(KEY_FPM_MAX_CHILDREN,"5");
         putDefault(KEY_FPM_SOCKET,      DATA + "/tmp/php-fpm.sock");
-        putDefault(KEY_ERROR_LOG,       DATA + "/logs/apache2/error.log");
+        putDefault(KEY_ERROR_LOG,       DATA + "/logs/apache2/error_log");
         putDefault(KEY_HTTPD_CONF,      DATA + "/Apache/apache2/httpd.conf");
         putDefault(KEY_THEME,           "dark");
         putDefault(KEY_FTP_PORT,        "2121");
