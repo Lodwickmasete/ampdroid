@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0D1117">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#161B22"
+        android:padding="24dp"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:text="🐘"
+            android:textSize="36sp"
+            android:gravity="center"
+            android:background="#21262D"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AmpDroid Server Manager"
+            android:textColor="#E6EDF3"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Setup Wizard"
+            android:textColor="#58A6FF"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:layout_marginTop="4dp"/>
+    </LinearLayout>
+
+    <!-- Progress indicator -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="20dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/step1Indicator"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:text="1"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/button_state"
+            android:gravity="center"
+            android:layout_marginEnd="4dp"/>
+
+        <View android:layout_width="20dp" android:layout_height="2dp"
+            android:background="#21262D" android:layout_marginStart="4dp" android:layout_marginEnd="4dp"/>
+
+        <TextView
+            android:id="@+id/step2Indicator"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:text="2"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textColor="#7D8590"
+            android:background="#21262D"
+            android:gravity="center"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"/>
+
+        <View android:layout_width="20dp" android:layout_height="2dp"
+            android:background="#21262D" android:layout_marginStart="4dp" android:layout_marginEnd="4dp"/>
+
+        <TextView
+            android:id="@+id/step3Indicator"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:text="3"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textColor="#7D8590"
+            android:background="#21262D"
+            android:gravity="center"
+            android:layout_marginStart="4dp"/>
+    </LinearLayout>
+
+    <!-- Content area -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:id="@+id/contentArea"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+    </ScrollView>
+
+    <!-- Bottom buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#161B22"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/btnBack"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="← BACK"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textColor="#7D8590"
+            android:background="@drawable/button_secondary"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/btnNext"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="NEXT →"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/button_state"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginStart="8dp"/>
+
+        <TextView
+            android:id="@+id/btnInstall"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="INSTALL"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/button_success"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="CANCEL"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textColor="#F85149"
+            android:background="@drawable/button_secondary"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginStart="8dp"/>
+    </LinearLayout>
+
+</LinearLayout>
