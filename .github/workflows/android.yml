@@ -27,7 +27,7 @@ jobs:
         run: ls -R
 
       # =========================
-      # VERSION (1.x.x FORMAT)
+      # VERSION
       # =========================
       - name: Generate version
         id: version
@@ -38,12 +38,16 @@ jobs:
           echo "VERSION=v$MAJOR.$MINOR.$PATCH" >> $GITHUB_OUTPUT
 
       # =========================
+      # DOWNLOAD ASSETS
+      # =========================
+      - name: Download assets
+        run: |
+          wget -O assets.zip https://github.com/Lodwickmasete/ampdroid/releases/download/v1.0/assets.zip
+
+      # =========================
       # BASE APK (NET INSTALLER)
       # =========================
-      - name: Build base APK
-        run: gradle clean assembleDebug
-
-      - name: Create setup.json (NET INSTALLER)
+      - name: Create setup.json (NET)
         run: |
           mkdir -p app/src/main/assets
 
@@ -55,31 +59,26 @@ jobs:
           }
           EOF
 
+      - name: Build base APK
+        run: gradle clean assembleDebug
+
       - name: Save base APK
         run: |
           mkdir -p output
-          cp app/build/outputs/apk/debug/app-debug.apk output/ampdroid-net-installer.apk
+          cp app/build/outputs/apk/debug/app-debug.apk \
+          output/ampdroid-net-${{ steps.version.outputs.VERSION }}.apk
 
       # =========================
-      # DOWNLOAD + EXTRACT ASSETS
+      # ASSETS APK (OFFLINE)
       # =========================
-      - name: Download assets
-        run: |
-          wget -O assets.zip https://github.com/Lodwickmasete/ampdroid/releases/download/v1.0/assets_debug.zip
-
       - name: Extract assets
         run: |
           rm -rf app/src/main/assets
           mkdir -p app/src/main/assets
           unzip -o assets.zip -d app/src/main/assets
 
-      # =========================
-      # ASSETS APK (OFFLINE INSTALLER)
-      # =========================
-      - name: Create setup.json (OFFLINE INSTALLER)
+      - name: Create setup.json (OFFLINE)
         run: |
-          mkdir -p app/src/main/assets
-
           cat > app/src/main/assets/setup.json <<EOF
           {
             "net_installer": false,
@@ -88,40 +87,35 @@ jobs:
           }
           EOF
 
-      - name: Build assets APK
+      - name: Build offline APK
         run: gradle clean assembleDebug
 
-      - name: Save assets APK
+      - name: Save offline APK
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk output/ampdroid-offline-installer.apk
+          cp app/build/outputs/apk/debug/app-debug.apk \
+          output/ampdroid-off-${{ steps.version.outputs.VERSION }}.apk
 
       # =========================
       # RELEASE NOTES
       # =========================
       - name: Create release notes
         run: |
-          echo "## 🚀 Ampdroid Release ${{ steps.version.outputs.VERSION }}" > release_notes.md
+          echo "## 🚀 Ampdroid ${{ steps.version.outputs.VERSION }}" > release_notes.md
           echo "" >> release_notes.md
-
           echo "### 👤 Author: Lodwick Masete" >> release_notes.md
           echo "" >> release_notes.md
-
           echo "### 🛠 Fixes" >> release_notes.md
-          echo "- Fixed asset extraction instability (Issue #1)" >> release_notes.md
+          echo "- Asset system fixed and stabilized (#1)" >> release_notes.md
           echo "" >> release_notes.md
-
+          echo "### 📦 Builds" >> release_notes.md
+          echo "- ampdroid-net-${{ steps.version.outputs.VERSION }}.apk (net installer)" >> release_notes.md
+          echo "- ampdroid-off-${{ steps.version.outputs.VERSION }}.apk (offline installer)" >> release_notes.md
+          echo "" >> release_notes.md
           echo "### 📌 Issue Closed" >> release_notes.md
           echo "- https://github.com/Lodwickmasete/ampdroid/issues/1" >> release_notes.md
-          echo "  > Asset build on v1.0.88 was unstable and extraction incomplete — now fixed." >> release_notes.md
-          echo "" >> release_notes.md
-
-          echo "### 📦 Builds" >> release_notes.md
-          echo "- 🟢 ampdroid-net-installer.apk (downloads assets on first run)" >> release_notes.md
-          echo "- 🟡 ampdroid-offline-installer.apk (fully bundled assets)" >> release_notes.md
-          echo "- 📁 assets.zip (from v1.0 release)" >> release_notes.md
 
       # =========================
-      # GITHUB RELEASE
+      # RELEASE
       # =========================
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -131,7 +125,7 @@ jobs:
           body_path: release_notes.md
           overwrite_files: true
           files: |
-            output/ampdroid-net-installer.apk
-            output/ampdroid-offline-installer.apk
+            output/ampdroid-net-${{ steps.version.outputs.VERSION }}.apk
+            output/ampdroid-off-${{ steps.version.outputs.VERSION }}.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
