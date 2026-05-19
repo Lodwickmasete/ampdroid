@@ -78,6 +78,8 @@ jobs:
       # =========================
       - name: Create setup.json (OFFLINE INSTALLER)
         run: |
+          mkdir -p app/src/main/assets
+
           cat > app/src/main/assets/setup.json <<EOF
           {
             "net_installer": false,
@@ -105,7 +107,7 @@ jobs:
           echo "" >> release_notes.md
 
           echo "### 🛠 Fixes" >> release_notes.md
-          echo "- Fixed asset extraction instability (see issue #1)" >> release_notes.md
+          echo "- Fixed asset extraction instability (Issue #1)" >> release_notes.md
           echo "" >> release_notes.md
 
           echo "### 📌 Issue Closed" >> release_notes.md
@@ -116,7 +118,7 @@ jobs:
           echo "### 📦 Builds" >> release_notes.md
           echo "- 🟢 ampdroid-net-installer.apk (downloads assets on first run)" >> release_notes.md
           echo "- 🟡 ampdroid-offline-installer.apk (fully bundled assets)" >> release_notes.md
-          echo "- 📁 assets.zip (shared asset package from v1.0 release)" >> release_notes.md
+          echo "- 📁 assets.zip (from v1.0 release)" >> release_notes.md
 
       # =========================
       # GITHUB RELEASE
