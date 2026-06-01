@@ -42,18 +42,26 @@
             android:layout_marginTop="4dp"/>
     </LinearLayout>
 
-    <!-- Progress indicator -->
+    <!--
+        Step indicator row.
+        Fixed height was causing the rounded drawable corners to clip the number.
+        Use wrap_content + generous paddingTop/paddingBottom so the view is tall
+        enough for the background shape to show fully without clipping.
+    -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="20dp"
-        android:gravity="center">
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:gravity="center_vertical">
 
         <TextView
             android:id="@+id/step1Indicator"
             android:layout_width="0dp"
-            android:layout_height="32dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="1"
             android:textSize="12sp"
@@ -61,39 +69,53 @@
             android:textColor="#FFFFFF"
             android:background="@drawable/button_state"
             android:gravity="center"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
             android:layout_marginEnd="4dp"/>
 
-        <View android:layout_width="20dp" android:layout_height="2dp"
-            android:background="#21262D" android:layout_marginStart="4dp" android:layout_marginEnd="4dp"/>
+        <View
+            android:layout_width="20dp"
+            android:layout_height="2dp"
+            android:background="#21262D"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"/>
 
         <TextView
             android:id="@+id/step2Indicator"
             android:layout_width="0dp"
-            android:layout_height="32dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="2"
             android:textSize="12sp"
             android:fontFamily="monospace"
             android:textColor="#7D8590"
-            android:background="#21262D"
+            android:background="@drawable/button_secondary"
             android:gravity="center"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
             android:layout_marginStart="4dp"
             android:layout_marginEnd="4dp"/>
 
-        <View android:layout_width="20dp" android:layout_height="2dp"
-            android:background="#21262D" android:layout_marginStart="4dp" android:layout_marginEnd="4dp"/>
+        <View
+            android:layout_width="20dp"
+            android:layout_height="2dp"
+            android:background="#21262D"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"/>
 
         <TextView
             android:id="@+id/step3Indicator"
             android:layout_width="0dp"
-            android:layout_height="32dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="3"
             android:textSize="12sp"
             android:fontFamily="monospace"
             android:textColor="#7D8590"
-            android:background="#21262D"
+            android:background="@drawable/button_secondary"
             android:gravity="center"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
             android:layout_marginStart="4dp"/>
     </LinearLayout>
 
@@ -122,7 +144,7 @@
         <TextView
             android:id="@+id/btnBack"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="← BACK"
             android:textSize="12sp"
@@ -130,6 +152,8 @@
             android:textColor="#7D8590"
             android:background="@drawable/button_secondary"
             android:gravity="center"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
             android:clickable="true"
             android:focusable="true"
             android:visibility="gone"/>
@@ -137,7 +161,7 @@
         <TextView
             android:id="@+id/btnNext"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="NEXT →"
             android:textSize="12sp"
@@ -145,6 +169,8 @@
             android:textColor="#FFFFFF"
             android:background="@drawable/button_state"
             android:gravity="center"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
             android:clickable="true"
             android:focusable="true"
             android:layout_marginStart="8dp"/>
@@ -152,7 +178,7 @@
         <TextView
             android:id="@+id/btnInstall"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="INSTALL"
             android:textSize="12sp"
@@ -160,6 +186,8 @@
             android:textColor="#FFFFFF"
             android:background="@drawable/button_success"
             android:gravity="center"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
             android:clickable="true"
             android:focusable="true"
             android:visibility="gone"/>
@@ -167,7 +195,7 @@
         <TextView
             android:id="@+id/btnCancel"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="CANCEL"
             android:textSize="12sp"
@@ -175,6 +203,8 @@
             android:textColor="#F85149"
             android:background="@drawable/button_secondary"
             android:gravity="center"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
             android:clickable="true"
             android:focusable="true"
             android:layout_marginStart="8dp"/>
