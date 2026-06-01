@@ -1,0 +1,177 @@
+/* =========================================
+   RESPONSIVE IMPROVEMENTS
+========================================= */
+
+/* Tablets / Small laptops */
+@media screen and (max-width: 900px) {
+
+  .toolbar {
+    gap: 4px;
+    padding: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toolbar button {
+    flex-shrink: 0;
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+
+  .file-row {
+    padding: 7px 8px;
+  }
+
+  .col-name {
+    min-width: 160px;
+  }
+
+  .col-date {
+    min-width: 110px;
+  }
+}
+
+
+/* Phones */
+@media screen and (max-width: 750px) {
+
+  body {
+    font-size: 12px;
+  }
+
+  .toolbar-overflow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .collapsible-item.responsive-collapse {
+    display: none;
+  }
+
+  .collapsible-item.responsive-collapse.show {
+    display: inline-flex !important;
+  }
+
+  .toolbar {
+    padding: 4px;
+    gap: 3px;
+  }
+
+  .toolbar button {
+    padding: 5px 7px;
+    font-size: 11px;
+  }
+
+  .col-type,
+  .col-size {
+    display: none;
+  }
+
+  .col-name {
+    min-width: 120px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .file-icon {
+    margin-right: 6px;
+  }
+
+  .addrbar {
+    gap: 4px;
+  }
+
+  .sidebar {
+    width: 200px;
+  }
+
+  .bottom-nav {
+    height: 48px;
+  }
+
+  .bottom-nav button {
+    min-width: 44px;
+  }
+}
+
+
+/* Small phones */
+@media screen and (max-width: 500px) {
+
+  .addrbar {
+    flex-wrap: wrap;
+    padding: 4px;
+  }
+
+  .addrbar input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .toolbar button span {
+    display: none;
+  }
+
+  .toolbar button i {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  .bottom-nav button span {
+    display: none;
+  }
+
+  .bottom-nav button i {
+    font-size: 15px;
+  }
+
+  .col-date {
+    display: none;
+  }
+
+  .file-row {
+    padding: 8px 6px;
+  }
+
+  .status-bar {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+}
+
+
+/* Ultra small devices */
+@media screen and (max-width: 360px) {
+
+  .toolbar button {
+    padding: 4px 6px;
+  }
+
+  .file-row {
+    font-size: 11px;
+  }
+
+  .sidebar {
+    width: 170px;
+  }
+
+  .bottom-nav {
+    height: 44px;
+  }
+
+  .bottom-nav button i {
+    font-size: 13px;
+  }
+}
