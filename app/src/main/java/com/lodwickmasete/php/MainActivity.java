@@ -44,6 +44,8 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import android.graphics.Color;
+
 public class MainActivity extends Activity {
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -82,15 +84,16 @@ public class MainActivity extends Activity {
     // ─────────────────────────────────────────────────────────────────────────
     //  Views — NAVBAR
     // ─────────────────────────────────────────────────────────────────────────
+    private TextView txtAppLogo;
     private TextView txtServerStatus;
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Views — QUICK ACTION BAR (service-specific)
     // ─────────────────────────────────────────────────────────────────────────
-    private TextView btnStartAll;
-    private TextView btnTogglePhp;
-    private TextView btnToggleApache;
-    private TextView btnToggleDb;
+    private LinearLayout btnStartAll;
+    private LinearLayout btnTogglePhp;
+    private LinearLayout btnToggleApache;
+    private LinearLayout btnToggleDb;
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Views — SERVER CONFIGURATION section
@@ -137,7 +140,7 @@ public class MainActivity extends Activity {
     // ─────────────────────────────────────────────────────────────────────────
     //  Views — TERMINAL
     // ─────────────────────────────────────────────────────────────────────────
-    private TextView  txtTerminal;
+    private TextView btnToggleTerminal, txtTerminal;
     private ScrollView scrollViewTerminal;
     private EditText  txtCommand;
     private TextView  btnExecute;
@@ -182,6 +185,10 @@ public class MainActivity extends Activity {
     //  Lifecycle
     // ─────────────────────────────────────────────────────────────────────────
 
+    private DrawerNavigation drawer;
+private BottomControlBarController controlBar;
+    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         config       = AppConfig.load(this);
@@ -203,8 +210,59 @@ public class MainActivity extends Activity {
         requestStoragePermission();
         checkAssets();
         initializeButtonStates();
-        appendTerminal("PHP Server Manager v3.0 — ready");
-        appendTerminal("Scripts: " + new File(getFilesDir(), "scripts").getAbsolutePath());
+
+       // appendTerminal("Scripts: " + new File(getFilesDir(), "scripts").getAbsolutePath());
+
+        setupDrawerNavigation();
+
+        View bottomControls = findViewById(R.id.includeBottomControls);
+        
+        
+
+View barView = findViewById(R.id.includeBottomControls);
+controlBar = new BottomControlBarController(this, barView);
+
+// ── Partial visibility: keep Start/Stop + Services rows when half-closed
+controlBar.setPartialVisibilityMask(
+        BottomControlBarController.ROW_START_STOP |
+        BottomControlBarController.ROW_SERVICES
+);
+
+// ── Button callbacks ───────────────────────────────────────────────────
+controlBar.setButtonCallback(new BottomControlBarController.ButtonCallback() {
+
+    @Override
+    public void onButtonClick(int buttonId) {
+        if (buttonId == R.id.btnStartAll)      startAll();
+        else if (buttonId == R.id.btnStopAll)      scriptRunner.stopAll();
+        else if (buttonId == R.id.btnTogglePhp)    togglePhpFpm();
+        else if (buttonId == R.id.btnToggleApache) toggleApache();
+        else if (buttonId == R.id.btnToggleDb)     toggleDatabase();
+        else if (buttonId == R.id.btnTerminal)     toggleTerminal();
+      /*  else if (buttonId == R.id.btnLogs)         openLogs();
+        else if (buttonId == R.id.btnRestart)      restartAll();*/
+        else if (buttonId == R.id.btnConfig) startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+        else if (buttonId == R.id.btnFiles)  startActivity(new Intent(MainActivity.this, EditorActivity.class));
+        else if (buttonId == R.id.btnUpload)     openFtp();
+     /* else if (buttonId == R.id.btnBrowser)      openBrowser();
+        else if (buttonId == R.id.btnApi)          openApiTester();*/
+    }
+
+    @Override
+    public boolean onButtonLongClick(int buttonId) {
+
+        if (buttonId == R.id.btnTerminal) {
+
+           toggleTerminal();
+            // Stop animation immediately since it's not async:
+            controlBar.stopLongPressAnimation(R.id.btnTerminal, Color.parseColor("#30363D"));
+            return true;
+        }
+        // Return false → event bubbles up, still fires onClick too
+        return false;
+    }
+});
+
     }
 
     @Override
@@ -213,11 +271,106 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
+// ── Programmatic state control ─────────────────────────────────────────────
+
+private void collapseBar() {
+    controlBar.setState(BottomControlBarController.STATE_COLLAPSED);
+}
+private void expandBar() {
+    controlBar.setState(BottomControlBarController.STATE_EXPANDED);
+}
+
+
+private void toggleTerminal() {
+
+        
+    if (layoutTerminalContainer.getVisibility() == View.VISIBLE) {
+        layoutTerminalContainer.setVisibility(View.GONE);
+        btnToggleTerminal.setText("▸ SHOW TERMINAL");
+    } else {
+        layoutTerminalContainer.setVisibility(View.VISIBLE);
+        btnToggleTerminal.setText("▾ HIDE TERMINAL");
+    }
+    
+}
+
+/**
+ * Setup the drawer navigation component
+ */
+private void setupDrawerNavigation() {
+
+// Initialize drawer
+drawer = new DrawerNavigation(this);
+
+LinearLayout header = new LinearLayout(this);
+header.setPadding(20, 50, 20, 20);
+TextView headerText = new TextView(this);
+headerText.setText("Ampdroid Server");
+headerText.setTextColor(Color.WHITE);
+headerText.setTextSize(20);
+header.addView(headerText);
+drawer.addHeaderView(header);
+
+// Add regular menu items
+drawer.setMenuItems(
+    new String[]{"Dashboard", "Settings", "Editor", "Setup"},
+    new String[]{"📊", "⚙️", "</>", "❓"}
+);
+
+// Set listener for both regular and sub-menu items
+drawer.setOnMenuItemSelectedListener(new DrawerNavigation.OnMenuItemSelectedListener() {
+    @Override
+    public void onMenuItemSelected(int position, String title) {
+        // Handle regular menu items
+        handleMenuItemSelection(position, title);
+    }
+    
+    @Override
+    public void onSubMenuItemSelected(int parentPosition, int childPosition, String title) {
+        // Handle collapsible sub-menu items
+     //   handleSubMenuItemSelection(parentPosition, childPosition, title);
+    }
+});
+
+    // Set initial selected item
+    drawer.setSelectedItem(0);
+}
+/**
+ * Handle regular menu item selection
+ */
+private void handleMenuItemSelection(int position, String title) {
+    
+    // Handle navigation based on position
+    switch (position) {
+        case 0: // Dashboard
+           // showDashboard();
+            break;
+        case 1: // Settings
+              startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+            break;
+        case 2: // editor
+           startActivity(new Intent(MainActivity.this, EditorActivity.class));
+            break;
+        case 3: // Setup
+          startActivity(new Intent(MainActivity.this, SetupActivity.class));
+            break;
+
+    }
+}
+
+// Handle back button
+@Override
+public void onBackPressed() {
+    if (!drawer.onBackPressed()) {
+        super.onBackPressed();
+    }
+}
     // ─────────────────────────────────────────────────────────────────────────
     //  View Initialisation
     // ─────────────────────────────────────────────────────────────────────────
 
     private void initViews() {
+        txtAppLogo            = findViewById(R.id.txtAppLogo);
         // Navbar
         txtServerStatus        = findViewById(R.id.txtServerStatus);
 
@@ -289,7 +442,8 @@ public class MainActivity extends Activity {
         btnCopyLog             = findViewById(R.id.btnCopyLog);
         chkAutoScroll          = findViewById(R.id.chkAutoScroll);
         layoutTerminalContainer= findViewById(R.id.layoutTerminalContainer);
-
+        btnToggleTerminal      = findViewById(R.id.btnToggleTerminal);
+        
         // Quick chips
         btnChipPhpV            = findViewById(R.id.btnChipPhpV);
         btnChipPhpInfo         = findViewById(R.id.btnChipPhpInfo);
@@ -448,35 +602,41 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
 
     private void setupListeners() {
 
+txtAppLogo.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+   drawer.toggleDrawer(); 
+    }
+});
+
         // ── Quick Action Bar ────────────────────────────────────────────────
         btnStartAll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) { startAll(); }
         });
 
-        btnTogglePhp.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (phpRunning) stopService(SCRIPT_STOP_FPM, "PHP-FPM", false, true, false);
-                else startPhpFpm();
-            }
-        });
 
-        btnToggleApache.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (apacheRunning) stopService(SCRIPT_STOP_APACHE, "Apache", true, false, false);
-                else startApache();
-            }
-        });
+btnTogglePhp.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+        togglePhpFpm();
+    }
+});
 
-        btnToggleDb.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (dbRunning) stopService(SCRIPT_STOP_DB, "MariaDB", false, false, true);
-                else startDatabase();
-            }
-        });
+btnToggleApache.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+        toggleApache();
+    }
+});
+
+btnToggleDb.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+        toggleDatabase();
+    }
+});
+
 
         // ── Database ────────────────────────────────────────────────────────
         btnStartMySQL.setOnClickListener(new View.OnClickListener() {
@@ -562,6 +722,11 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
         });
 
         // ── Terminal ────────────────────────────────────────────────────────
+        btnToggleTerminal.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) { toggleTerminal(); }
+        });
+        
         btnExecute.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) { executeCommand(txtCommand.getText().toString()); }
@@ -581,6 +746,7 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
         btnClearLog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 logBuilder.setLength(0);
                 txtTerminal.setText("");
                 appendTerminal("Terminal cleared.");
@@ -597,22 +763,7 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
             public void onClick(View v) { copyLogToClipboard(); }
         });
 
-        // ── Terminal show/hide ───────────────────────────────────────────────
-        TextView btnToggleTerminal = findViewById(R.id.btnToggleTerminal);
-        if (btnToggleTerminal != null) {
-            btnToggleTerminal.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (layoutTerminalContainer.getVisibility() == View.VISIBLE) {
-                        layoutTerminalContainer.setVisibility(View.GONE);
-                        ((TextView) v).setText("▸ SHOW TERMINAL");
-                    } else {
-                        layoutTerminalContainer.setVisibility(View.VISIBLE);
-                        ((TextView) v).setText("▾ HIDE TERMINAL");
-                    }
-                }
-            });
-        }
+
 
         // ── Quick chips ──────────────────────────────────────────────────────
         btnChipPhpV.setOnClickListener(new View.OnClickListener() {
@@ -665,6 +816,14 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
         env.put("APACHE_DOCROOT",    txtDocumentRoot.getText().toString().trim());
         env.put("APACHE_PORT",       txtPort.getText().toString().trim());
         env.put("APACHE_CONF",       txtHttpdConf.getText().toString().trim());
+
+
+        env.put("SSL_ENABLED", String.valueOf(config.getBoolean(AppConfig.KEY_SSL_ENABLED, false)));
+        env.put("SSL_PORT",    String.valueOf(config.get(AppConfig.KEY_SSL_PORT, "")));
+        env.put("SSL_CERT",    String.valueOf(config.get(AppConfig.KEY_SSL_CERT, "")));
+        env.put("SSL_KEY",     String.valueOf(config.get(AppConfig.KEY_SSL_KEY, "")));
+
+        
         // PHP-FPM
         env.put("FPM_PORT",          txtFpmPort != null ? txtFpmPort.getText().toString().trim() : "9000");
         env.put("FPM_MAX_CHILDREN",  txtFpmMaxChildren != null ? txtFpmMaxChildren.getText().toString().trim() : "5");
@@ -676,6 +835,8 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
         env.put("PHP_DISPLAY_ERRORS",chkDisplayErrors.isChecked() ? "On" : "Off");
         env.put("PHP_ALLOW_URL_FOPEN",chkAllowUrlFopen.isChecked() ? "On" : "Off");
         env.put("PHP_OPCACHE",       chkOpcache != null && chkOpcache.isChecked() ? "1" : "0");
+        env.put("PHP_DISABLE_FUNCTIONS", String.valueOf(config.get(AppConfig.KEY_DISABLE_FUNCTIONS, "")) );
+
         // MariaDB
         env.put("MYSQL_PORT",        txtMysqlPort.getText().toString().trim());
         env.put("MYSQL_HOST",        txtMysqlHost.getText().toString().trim());
@@ -700,6 +861,22 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
             @Override public void onError(String msg) { appendTerminal("[!] " + msg); }
         });
     }
+
+
+private void togglePhpFpm() {
+    if (phpRunning) stopService(SCRIPT_STOP_FPM, "PHP-FPM", false, true, false);
+    else startPhpFpm();
+}
+
+private void toggleApache() {
+if (apacheRunning) stopService(SCRIPT_STOP_APACHE, "Apache", true, false, false);
+else startApache();
+}
+
+private void toggleDatabase() {
+    if (dbRunning) stopService(SCRIPT_STOP_DB, "MariaDB", false, false, true);
+    else startDatabase();
+}
 
     private void startApache() {
        // appendTerminal("[+] Starting Apache...");
@@ -790,7 +967,7 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
     }
 
     private void updatePhpStatusView() {
-        btnTogglePhp.setText(phpRunning ? "■ PHP-FPM" : "▶ PHP-FPM");
+     //   btnTogglePhp.setText(phpRunning ? "■ PHP-FPM" : "▶ PHP-FPM");
         int color = phpRunning
                 ? getResources().getColor(android.R.color.holo_green_dark)
                 : 0xFF586069;
@@ -799,7 +976,7 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
     }
 
     private void updateApacheStatusView() {
-        btnToggleApache.setText(apacheRunning ? "■ Apache" : "▶ Apache");
+    //    btnToggleApache.setText(apacheRunning ? "■ Apache" : "▶ Apache");
         int color = apacheRunning
                 ? 0xFF1F6FEB
                 : 0xFF586069;
@@ -808,7 +985,7 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
     }
 
     private void updateDbStatusView() {
-        btnToggleDb.setText(dbRunning ? "■ Database" : "▶ Database");
+     //   btnToggleDb.setText(dbRunning ? "■ Database" : "▶ Database");
         int color = dbRunning
                 ? 0xFF9E6A03
                 : 0xFF586069;
@@ -852,7 +1029,7 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
     private void installPhpMyAdmin() {
         extractZipFile(new File(getFilesDir(), "/phpmyadmin.zip"));
         extractZipFile(new File(getFilesDir(), "/db.zip"));
-        appendTerminal("[+] phpMyAdmin — download it from https://www.phpmyadmin.net/ if not found");
+
     }
 
     private void openPhpMyAdmin() {
@@ -862,6 +1039,12 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
         appendTerminal("[+] Opening phpMyAdmin: " + url);
     }
 
+private void openFtp() {
+    String port = txtPort.getText().toString().trim();
+    String url  = "http://127.0.0.1:" + port + "/ampdroid/ftp";
+    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+    appendTerminal("[+] Opening FTP: " + url);
+}
     // ─────────────────────────────────────────────────────────────────────────
     //  Config — save / load
     // ─────────────────────────────────────────────────────────────────────────
@@ -896,12 +1079,6 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
         appendTerminal(ok ? "[+] Config saved to app_config.json" : "[!] Failed to save config");
         Toast.makeText(this, ok ? "Config saved" : "Save failed", Toast.LENGTH_SHORT).show();
 
-       /*no longer using savePhpIni(),
-        php_custom.ini is now php.ini.tmp generated by
-        start_php_fpm.sh
-        other settings are in /data/user/0/com.lodwickmasete.php/files/app_config.json
-        //savePhpIni();
-        */
     }
 
     private void loadConfigToUi() {
@@ -933,33 +1110,9 @@ boolean dBfolderExists = dBFolder.exists() && dBFolder.isDirectory();
         if (txtFtpPass != null) txtFtpPass.setText(config.get(AppConfig.KEY_FTP_PASS, "admin"));
         if (chkFtpAnonymous != null) chkFtpAnonymous.setChecked(config.getBoolean(AppConfig.KEY_FTP_ANON, false));
 
-        appendTerminal("[+] Config loaded from app_config.json");
+      //  appendTerminal("[+] Config loaded from app_config.json");
     }
 
-/*NOT USED ANYMORE*/
-    private void savePhpIni() {
-        try {
-            File phpIni = new File(DATA_DIR, "php_custom.ini");
-            StringBuilder ini = new StringBuilder();
-            ini.append("memory_limit = ").append(txtMemoryLimit.getText()).append("\n");
-            ini.append("max_execution_time = ").append(txtMaxExecTime != null ? txtMaxExecTime.getText() : "30").append("\n");
-            ini.append("upload_max_filesize = ").append(txtUploadMaxSize != null ? txtUploadMaxSize.getText() : "64M").append("\n");
-            ini.append("post_max_size = ").append(txtUploadMaxSize != null ? txtUploadMaxSize.getText() : "64M").append("\n");
-            ini.append("display_errors = ").append(chkDisplayErrors.isChecked() ? "On" : "Off").append("\n");
-            ini.append("allow_url_fopen = ").append(chkAllowUrlFopen.isChecked() ? "On" : "Off").append("\n");
-            if (chkOpcache != null) {
-                ini.append("opcache.enable = ").append(chkOpcache.isChecked() ? "1" : "0").append("\n");
-            }
-            ini.append("error_log = ").append(txtErrorLog.getText()).append("\n");
-
-            FileOutputStream fos = new FileOutputStream(phpIni);
-            fos.write(ini.toString().getBytes());
-            fos.close();
-            appendTerminal("[+] php_custom.ini updated");
-        } catch (Exception e) {
-            appendTerminal("[!] Failed to write php_custom.ini: " + e.getMessage());
-        }
-    }
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Theme Switching
@@ -1419,7 +1572,7 @@ private void extractZipFile(final File zipFile) {
     private void checkAssets() {
         File www = new File(getFilesDir(), "www");
         if (www.exists()) {
-            appendTerminal("[+] www/ found: " + www.getAbsolutePath());
+           // appendTerminal("[+] www/ found: " + www.getAbsolutePath());
         } else {
             appendTerminal("[!] www/ not found — copy or extract assets first");
         }
@@ -1468,4 +1621,12 @@ private void extractZipFile(final File zipFile) {
             else if (f.isDirectory()) setLibPermissions(f);
         }
     }
+
+@Override
+protected void onResume() {
+    super.onResume();
+
+//loadConfigToUi();
+}
+
 }
