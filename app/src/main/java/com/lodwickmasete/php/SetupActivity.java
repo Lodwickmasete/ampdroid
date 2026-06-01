@@ -40,34 +40,35 @@ import java.util.zip.ZipInputStream;
  *   "version": "1.0"
  * }
  *
+ * Bundled installer: master.zip is expected in assets/master.zip.
+ * Net installer:     master.zip is downloaded from download_url.
+ *
+ * Both paths converge at STEP_WELCOME after the zip is extracted.
+ *
  * Component detection uses folder/file existence:
  *   Apache    → files/Apache/
  *   PHP-FPM   → files/fpm/
  *   MariaDB   → files/db/
  *   phpMyAdmin→ files/phpmyadmin/
- *   FTP       → files/ftp/          (placeholder — not yet implemented)
- *   WordPress → files/wordpress/    (placeholder)
- *
- * The activity never auto-finishes; the user must press CANCEL / back.
  */
 public class SetupActivity extends Activity {
 
     // ─── Steps ────────────────────────────────────────────────────────────────
-    private static final int STEP_DOWNLOAD  = 0;   // net installer only
-    private static final int STEP_WELCOME   = 1;
-    private static final int STEP_COMPONENTS= 2;
-    private static final int STEP_REVIEW    = 3;
+    private static final int STEP_PREPARE  = 0;   // download (net) OR extract bundled zip
+    private static final int STEP_WELCOME  = 1;
+    private static final int STEP_COMPONENTS = 2;
+    private static final int STEP_REVIEW   = 3;
 
-    // ─── Component IDs (also used as sub-dir names) ───────────────────────────
-    private static final String COMP_APACHE  = "Apache";
-    private static final String COMP_FPM     = "fpm";
-    private static final String COMP_MYSQL   = "db";
-    private static final String COMP_PMA     = "phpmyadmin";
-    private static final String COMP_FTP     = "ftp";
-    private static final String COMP_WP      = "wordpress";
+    // ─── Component IDs ────────────────────────────────────────────────────────
+    private static final String COMP_APACHE = "Apache";
+    private static final String COMP_FPM    = "fpm";
+    private static final String COMP_MYSQL  = "db";
+    private static final String COMP_PMA    = "phpmyadmin";
+    private static final String COMP_FTP    = "ftp";
+    private static final String COMP_WP     = "wordpress";
 
-
-    private static final String LIB_ZIP = "lib.zip";
+    private static final String MASTER_ZIP  = "master.zip";
+    private static final String LIB_ZIP     = "lib.zip";
 
     // ─── UI ──────────────────────────────────────────────────────────────────
     private LinearLayout contentArea;
@@ -75,12 +76,11 @@ public class SetupActivity extends Activity {
     private TextView step1Ind, step2Ind, step3Ind;
 
     // ─── State ───────────────────────────────────────────────────────────────
-    private int currentStep;
-    private boolean isNetInstaller  = false;
-    private String  downloadUrl     = "";
-    private boolean masterZipReady  = false;   // download complete
+    private int     currentStep;
+    private boolean isNetInstaller = false;
+    private String  downloadUrl    = "";
+    private boolean assetsReady    = false;   // master zip extracted
 
-    // user choices (checked = want installed; will be compared to current state)
     private boolean wantApache = true;
     private boolean wantFpm    = true;
     private boolean wantMysql  = true;
@@ -100,13 +100,17 @@ public class SetupActivity extends Activity {
         prefs     = getSharedPreferences("setup", MODE_PRIVATE);
         appConfig = AppConfig.load(this);
 
-        readSetupJson();   // detect net vs bundled
+        readSetupJson();
         initViews();
 
-        if (isNetInstaller && !masterZipReady) {
-            currentStep = STEP_DOWNLOAD;
-        } else {
+        // Always start at STEP_PREPARE so the user sees the prepare screen
+        // (download OR bundled-extract). If assets are already ready (from a
+        // previous run) we skip straight to STEP_WELCOME.
+        if (assetsAlreadyExtracted()) {
+            assetsReady = true;
             currentStep = STEP_WELCOME;
+        } else {
+            currentStep = STEP_PREPARE;
         }
         showStep(currentStep);
     }
@@ -120,14 +124,23 @@ public class SetupActivity extends Activity {
             String line;
             while ((line = br.readLine()) != null) sb.append(line);
             br.close();
-
             JSONObject j = new JSONObject(sb.toString());
             isNetInstaller = j.optBoolean("net_installer", false);
             downloadUrl    = j.optString("download_url", "");
         } catch (Exception e) {
-            // no setup.json → treat as bundled
             isNetInstaller = false;
         }
+    }
+
+    /**
+     * Assets are considered already extracted when the temp-unpack sentinel
+     * file exists OR when all four base component dirs are present.
+     */
+    private boolean assetsAlreadyExtracted() {
+        File sentinel = new File(getFilesDir(), ".assets_ready");
+        if (sentinel.exists()) return true;
+        // Alternatively, trust that at least Apache is present
+        return new File(getFilesDir(), COMP_APACHE).isDirectory();
     }
 
     // ─── initViews ───────────────────────────────────────────────────────────
@@ -148,7 +161,13 @@ public class SetupActivity extends Activity {
             @Override public void onClick(View v) { navigateNext(); }
         });
         btnInstall.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { startInstallation(); }
+            @Override public void onClick(View v) {
+                if (allSelectedAlreadyInstalled()) {
+                    goToMainActivity();
+                } else {
+                    startInstallation();
+                }
+            }
         });
         btnCancel.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { finish(); }
@@ -157,12 +176,9 @@ public class SetupActivity extends Activity {
 
     // ─── Navigation ──────────────────────────────────────────────────────────
     private void navigateBack() {
-        if (currentStep == STEP_WELCOME) return;          // nothing before welcome
-        if (currentStep == STEP_COMPONENTS) {
-            currentStep = STEP_WELCOME;
-        } else if (currentStep == STEP_REVIEW) {
-            currentStep = STEP_COMPONENTS;
-        }
+        if (currentStep == STEP_WELCOME) return;
+        if (currentStep == STEP_COMPONENTS) currentStep = STEP_WELCOME;
+        else if (currentStep == STEP_REVIEW)  currentStep = STEP_COMPONENTS;
         showStep(currentStep);
     }
 
@@ -184,15 +200,15 @@ public class SetupActivity extends Activity {
         updateButtons(step);
 
         switch (step) {
-            case STEP_DOWNLOAD:  buildDownloadStep();    break;
-            case STEP_WELCOME:   buildWelcomeStep();     break;
-            case STEP_COMPONENTS:buildComponentsStep();  break;
-            case STEP_REVIEW:    buildReviewStep();      break;
+            case STEP_PREPARE:    buildPrepareStep();    break;
+            case STEP_WELCOME:    buildWelcomeStep();    break;
+            case STEP_COMPONENTS: buildComponentsStep(); break;
+            case STEP_REVIEW:     buildReviewStep();     break;
         }
     }
 
     private void updateButtons(int step) {
-        if (step == STEP_DOWNLOAD) {
+        if (step == STEP_PREPARE) {
             btnBack.setVisibility(View.GONE);
             btnNext.setVisibility(View.GONE);
             btnInstall.setVisibility(View.GONE);
@@ -211,100 +227,128 @@ public class SetupActivity extends Activity {
             btnBack.setVisibility(View.VISIBLE);
             btnNext.setVisibility(View.GONE);
             btnInstall.setVisibility(View.VISIBLE);
+            if (allSelectedAlreadyInstalled()) {
+                btnInstall.setText("FINISH");
+                btnInstall.setBackgroundResource(R.drawable.button_state);
+            } else {
+                btnInstall.setText("INSTALL");
+                btnInstall.setBackgroundResource(R.drawable.button_success);
+            }
         }
     }
 
+    /** Returns true when every wanted component is already on disk. */
+    private boolean allSelectedAlreadyInstalled() {
+        if (wantApache && !isInstalled(COMP_APACHE)) return false;
+        if (wantFpm    && !isInstalled(COMP_FPM))    return false;
+        if (wantMysql  && !isInstalled(COMP_MYSQL))  return false;
+        if (wantPma    && !isInstalled(COMP_PMA))    return false;
+        return true;
+    }
+
     private void updateIndicators(int step) {
-        // step numbers for indicator: WELCOME=1, COMPONENTS=2, REVIEW=3
-        int vis = step == STEP_DOWNLOAD ? 0 : step; // DOWNLOAD shows no indicator highlight
-        step1Ind.setBackgroundResource(vis >= STEP_WELCOME   ? R.drawable.button_state : R.drawable.button_secondary);
-        step2Ind.setBackgroundResource(vis >= STEP_COMPONENTS? R.drawable.button_state : R.drawable.button_secondary);
-        step3Ind.setBackgroundResource(vis >= STEP_REVIEW    ? R.drawable.button_state : R.drawable.button_secondary);
-        step1Ind.setTextColor(getResources().getColor(vis >= STEP_WELCOME    ? android.R.color.white : R.color.text_secondary));
-        step2Ind.setTextColor(getResources().getColor(vis >= STEP_COMPONENTS ? android.R.color.white : R.color.text_secondary));
-        step3Ind.setTextColor(getResources().getColor(vis >= STEP_REVIEW     ? android.R.color.white : R.color.text_secondary));
+        // STEP_PREPARE has no indicator; steps 1-3 map to WELCOME, COMPONENTS, REVIEW
+        int active = step; // STEP_PREPARE(0) → nothing lit; otherwise matches
+        applyIndicator(step1Ind, active >= STEP_WELCOME);
+        applyIndicator(step2Ind, active >= STEP_COMPONENTS);
+        applyIndicator(step3Ind, active >= STEP_REVIEW);
+    }
+
+    private void applyIndicator(TextView tv, boolean on) {
+        tv.setBackgroundResource(on ? R.drawable.button_state : R.drawable.button_secondary);
+        tv.setTextColor(getResources().getColor(on ? android.R.color.white : R.color.text_secondary));
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // STEP 0 — Download master zip (net installer only)
+    // STEP 0 — Prepare assets (download OR extract bundled master.zip)
     // ═════════════════════════════════════════════════════════════════════════
-    private android.widget.ProgressBar downloadProgress;
-    private TextView downloadStatus;
+    private android.widget.ProgressBar prepareProgress;
+    private TextView prepareStatus;
 
-    private void buildDownloadStep() {
+    private void buildPrepareStep() {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(0, 0, 0, 0);
 
-        layout.addView(createSectionTitle("\u2193 DOWNLOAD ASSETS"));
+        if (isNetInstaller) {
+            layout.addView(createSectionTitle("\u2193 DOWNLOAD ASSETS"));
+        } else {
+            layout.addView(createSectionTitle("\ud83d\udce6 PREPARE BUNDLED ASSETS"));
+        }
 
-        downloadStatus = new TextView(this);
-        downloadStatus.setText("Assets will be downloaded from GitHub.\nThis may take a few minutes on a slow connection.");
-        downloadStatus.setTextColor(getResources().getColor(R.color.text_secondary));
-        downloadStatus.setTextSize(10);
-        downloadStatus.setTypeface(Typeface.MONOSPACE);
-        downloadStatus.setBackgroundResource(R.drawable.button_secondary);
-        downloadStatus.setPadding(16, 16, 16, 16);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(0, 0, 0, 16);
-        downloadStatus.setLayoutParams(lp);
-        layout.addView(downloadStatus);
+        prepareStatus = new TextView(this);
+        if (isNetInstaller) {
+            prepareStatus.setText("Assets will be downloaded from GitHub.\nThis may take a few minutes on a slow connection.");
+        } else {
+            prepareStatus.setText("Assets are bundled inside this APK.\nThey will be extracted to app storage.");
+        }
+        prepareStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+        prepareStatus.setTextSize(10);
+        prepareStatus.setTypeface(Typeface.MONOSPACE);
+        prepareStatus.setBackgroundResource(R.drawable.button_secondary);
+        prepareStatus.setPadding(16, 16, 16, 16);
+        LinearLayout.LayoutParams statusLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        statusLp.setMargins(0, 0, 0, 16);
+        prepareStatus.setLayoutParams(statusLp);
+        layout.addView(prepareStatus);
 
-        // URL display
-        TextView urlLabel = createLabel("SOURCE URL");
-        layout.addView(urlLabel);
-        TextView urlVal = new TextView(this);
-        urlVal.setText(downloadUrl.isEmpty() ? "(no URL in setup.json)" : downloadUrl);
-        urlVal.setTextColor(getResources().getColor(R.color.accent));
-        urlVal.setTextSize(9);
-        urlVal.setTypeface(Typeface.MONOSPACE);
-        urlVal.setPadding(0, 4, 0, 16);
-        layout.addView(urlVal);
+        if (isNetInstaller) {
+            // Show URL
+            layout.addView(createLabel("SOURCE URL"));
+            TextView urlVal = new TextView(this);
+            urlVal.setText(downloadUrl.isEmpty() ? "(no URL in setup.json)" : downloadUrl);
+            urlVal.setTextColor(getResources().getColor(R.color.accent));
+            urlVal.setTextSize(9);
+            urlVal.setTypeface(Typeface.MONOSPACE);
+            urlVal.setPadding(0, 4, 0, 16);
+            layout.addView(urlVal);
+        }
 
         // Progress bar
-        downloadProgress = new android.widget.ProgressBar(this, null,
+        prepareProgress = new android.widget.ProgressBar(this, null,
                 android.R.attr.progressBarStyleHorizontal);
-        downloadProgress.setMax(100);
-        downloadProgress.setProgress(0);
-        downloadProgress.setLayoutParams(new LinearLayout.LayoutParams(
+        prepareProgress.setMax(100);
+        prepareProgress.setProgress(0);
+        prepareProgress.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 24));
-        layout.addView(downloadProgress);
+        layout.addView(prepareProgress);
 
-        // Start button
-        TextView btnDownload = new TextView(this);
-        btnDownload.setText("START DOWNLOAD");
-        btnDownload.setTextColor(getResources().getColor(android.R.color.white));
-        btnDownload.setTextSize(12);
-        btnDownload.setTypeface(Typeface.MONOSPACE);
-        btnDownload.setGravity(android.view.Gravity.CENTER);
-        btnDownload.setBackgroundResource(R.drawable.button_state);
-        btnDownload.setPadding(20, 14, 20, 14);
-        btnDownload.setClickable(true);
-        btnDownload.setFocusable(true);
+        // Action button
+        final TextView btnAction = new TextView(this);
+        btnAction.setText(isNetInstaller ? "START DOWNLOAD" : "EXTRACT ASSETS");
+        btnAction.setTextColor(getResources().getColor(android.R.color.white));
+        btnAction.setTextSize(12);
+        btnAction.setTypeface(Typeface.MONOSPACE);
+        btnAction.setGravity(android.view.Gravity.CENTER);
+        btnAction.setBackgroundResource(R.drawable.button_state);
+        btnAction.setPadding(20, 14, 20, 14);
+        btnAction.setClickable(true);
+        btnAction.setFocusable(true);
         LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         btnLp.setMargins(0, 24, 0, 0);
-        btnDownload.setLayoutParams(btnLp);
-        final TextView btnRef = btnDownload;
-        btnDownload.setOnClickListener(new View.OnClickListener() {
+        btnAction.setLayoutParams(btnLp);
+        btnAction.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
-                btnRef.setEnabled(false);
-                btnRef.setText("DOWNLOADING...");
-                downloadMasterZip();
+                btnAction.setEnabled(false);
+                btnAction.setText(isNetInstaller ? "DOWNLOADING..." : "EXTRACTING...");
+                if (isNetInstaller) {
+                    downloadAndExtractMaster();
+                } else {
+                    extractBundledMaster();
+                }
             }
         });
-        layout.addView(btnDownload);
+        layout.addView(btnAction);
 
         contentArea.addView(layout);
     }
 
-    private void downloadMasterZip() {
+    // ─── Net installer: download then extract ─────────────────────────────────
+    private void downloadAndExtractMaster() {
         final String url = downloadUrl;
         if (url.isEmpty()) {
-            setDownloadStatus("Error: no download URL configured in setup.json");
+            setPrepareStatus("Error: no download URL configured in setup.json");
             return;
         }
 
@@ -312,16 +356,9 @@ public class SetupActivity extends Activity {
             @Override public void run() {
                 InputStream in = null;
                 FileOutputStream out = null;
-                File dest = null;
 
                 try {
-                    File appDir = getFilesDir();
-                    String fileName = "assets_master.zip";
-                    if (url.contains("/")) {
-                        String s = url.substring(url.lastIndexOf("/") + 1);
-                        if (!s.isEmpty()) fileName = s;
-                    }
-                    dest = new File(appDir, fileName);
+                    File dest = new File(getFilesDir(), MASTER_ZIP);
 
                     HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                     conn.setConnectTimeout(30000);
@@ -329,44 +366,33 @@ public class SetupActivity extends Activity {
                     conn.connect();
 
                     final long total = conn.getContentLengthLong();
-                    in = conn.getInputStream();
+                    in  = conn.getInputStream();
                     out = new FileOutputStream(dest);
 
                     byte[] buf = new byte[8192];
                     int n;
                     long downloaded = 0;
-
                     while ((n = in.read(buf)) != -1) {
                         out.write(buf, 0, n);
                         downloaded += n;
                         if (total > 0) {
                             final int pct = (int) (downloaded * 100 / total);
-                            setDownloadProgress(pct);
+                            setPrepareProgress(pct / 2); // first 50 = download
                         }
                     }
                     out.flush();
-                    setDownloadProgress(100);
-                    setDownloadStatus("Download complete. Extracting master archive...");
+                    setPrepareProgress(50);
+                    setPrepareStatus("Download complete. Extracting...");
 
-                    // Extract the master zip — it contains component zips + folders
-                    extractZipTo(dest, getFilesDir());
-
-                    // Clean up the downloaded zip
+                    extractMasterZipFromFile(dest);
                     dest.delete();
 
-                    masterZipReady = true;
-                    runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            setDownloadStatus("Assets ready. Proceeding to setup...");
-                            currentStep = STEP_WELCOME;
-                            showStep(currentStep);
-                        }
-                    });
+                    onAssetsReady();
 
                 } catch (final Exception e) {
                     runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            setDownloadStatus("Download failed: " + e.getMessage() +
+                            setPrepareStatus("Download failed: " + e.getMessage() +
                                     "\n\nCheck your internet connection and try again.");
                         }
                     });
@@ -378,24 +404,107 @@ public class SetupActivity extends Activity {
         }).start();
     }
 
-    private void setDownloadProgress(final int pct) {
+    // ─── Bundled installer: copy from assets then extract ─────────────────────
+    private void extractBundledMaster() {
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    setPrepareStatus("Copying master.zip from APK assets...");
+
+                    // master.zip must exist in assets/
+                    if (!assetExists(MASTER_ZIP)) {
+                        setPrepareStatus("Error: master.zip not found in APK assets.");
+                        return;
+                    }
+
+                    File dest = new File(getFilesDir(), MASTER_ZIP);
+                    copyAssetToFileWithProgress(MASTER_ZIP, dest);
+
+                    setPrepareProgress(50);
+                    setPrepareStatus("Extraction in progress...");
+
+                    extractMasterZipFromFile(dest);
+                    dest.delete();
+
+                    onAssetsReady();
+
+                } catch (final Exception e) {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            setPrepareStatus("Extraction failed: " + e.getMessage());
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    /**
+     * Shared: extract the master zip (already on disk) to filesDir.
+     * The master zip layout mirrors the net-installer zip exactly.
+     * Progress is mapped to 50–100%.
+     */
+    private void extractMasterZipFromFile(File masterZip) throws IOException {
+        ZipInputStream zis = new ZipInputStream(new java.io.FileInputStream(masterZip));
+        ZipEntry entry;
+        byte[] buf = new byte[8192];
+
+        // Count entries for progress
+        // (We can't easily count without a second pass, so just pulse progress)
+        int count = 0;
+        while ((entry = zis.getNextEntry()) != null) {
+            File target = new File(getFilesDir(), entry.getName());
+            if (entry.isDirectory()) {
+                target.mkdirs();
+            } else {
+                target.getParentFile().mkdirs();
+                FileOutputStream fos = new FileOutputStream(target);
+                int n;
+                while ((n = zis.read(buf)) != -1) fos.write(buf, 0, n);
+                fos.close();
+            }
+            zis.closeEntry();
+            count++;
+            // Smooth progress from 50→95
+            final int pct = Math.min(95, 50 + count);
+            setPrepareProgress(pct);
+        }
+        zis.close();
+
+        // Write sentinel so we don't re-extract next launch
+        new File(getFilesDir(), ".assets_ready").createNewFile();
+        setPrepareProgress(100);
+    }
+
+    private void onAssetsReady() {
+        assetsReady = true;
         runOnUiThread(new Runnable() {
             @Override public void run() {
-                if (downloadProgress != null) downloadProgress.setProgress(pct);
+                setPrepareStatus("Assets ready!");
+                currentStep = STEP_WELCOME;
+                showStep(currentStep);
             }
         });
     }
 
-    private void setDownloadStatus(final String msg) {
+    private void setPrepareProgress(final int pct) {
         runOnUiThread(new Runnable() {
             @Override public void run() {
-                if (downloadStatus != null) downloadStatus.setText(msg);
+                if (prepareProgress != null) prepareProgress.setProgress(pct);
+            }
+        });
+    }
+
+    private void setPrepareStatus(final String msg) {
+        runOnUiThread(new Runnable() {
+            @Override public void run() {
+                if (prepareStatus != null) prepareStatus.setText(msg);
             }
         });
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // STEP 1 — Welcome / path
+    // STEP 1 — Welcome / info
     // ═════════════════════════════════════════════════════════════════════════
     private void buildWelcomeStep() {
         LinearLayout layout = new LinearLayout(this);
@@ -403,7 +512,6 @@ public class SetupActivity extends Activity {
 
         layout.addView(createSectionTitle("\u2665 AMPDROID SERVER SETUP"));
 
-        // Info card
         StringBuilder info = new StringBuilder();
         info.append("Storage Required: ~").append(calculateTotalWantedSize()).append(" MB\n\n");
         info.append("Components available:\n");
@@ -411,9 +519,7 @@ public class SetupActivity extends Activity {
         info.append("  \u2022 PHP-FPM Interpreter\n");
         info.append("  \u2022 MariaDB Database\n");
         info.append("  \u2022 phpMyAdmin (optional)\n");
-        info.append("  \u2022 FTP Server (optional)\n");
-        info.append("  \u2022 WordPress (placeholder)\n\n");
-        info.append("Already installed components will be shown\n");
+        info.append("\nAlready installed components will be shown\n");
         info.append("on the next screen. You may install or remove\n");
         info.append("individual components at any time.");
 
@@ -427,13 +533,9 @@ public class SetupActivity extends Activity {
         infoCard.setLayoutParams(matchWrap(0, 0, 0, 12));
         layout.addView(infoCard);
 
-        // Install path (read-only display)
         layout.addView(createLabel("INSTALLATION PATH"));
 
-        LinearLayout pathRow = new LinearLayout(this);
-        pathRow.setOrientation(LinearLayout.HORIZONTAL);
-
-        final EditText txtPath = new EditText(this);
+        EditText txtPath = new EditText(this);
         txtPath.setText(getFilesDir().getAbsolutePath());
         txtPath.setTextColor(getResources().getColor(R.color.text_primary));
         txtPath.setTextSize(10);
@@ -441,18 +543,10 @@ public class SetupActivity extends Activity {
         txtPath.setBackgroundResource(R.drawable.button_secondary);
         txtPath.setPadding(12, 10, 12, 10);
         txtPath.setEnabled(false);
-        LinearLayout.LayoutParams pathLp = new LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1);
-        txtPath.setLayoutParams(pathLp);
-        pathRow.addView(txtPath);
+        layout.addView(txtPath);
 
-        layout.addView(pathRow);
-
-        // Free space
         File filesDir = getFilesDir();
-        long freeBytes = filesDir.getFreeSpace();
-        long freeMb = freeBytes / (1024 * 1024);
-
+        long freeMb = filesDir.getFreeSpace() / (1024 * 1024);
         TextView spaceInfo = new TextView(this);
         spaceInfo.setText("Free space: " + freeMb + " MB");
         spaceInfo.setTextColor(freeMb > 300
@@ -463,7 +557,6 @@ public class SetupActivity extends Activity {
         spaceInfo.setPadding(0, 8, 0, 0);
         layout.addView(spaceInfo);
 
-        // Installer type badge
         TextView badge = new TextView(this);
         badge.setText(isNetInstaller
                 ? "\u2601  NET INSTALLER  —  assets fetched from GitHub"
@@ -473,8 +566,7 @@ public class SetupActivity extends Activity {
         badge.setTypeface(Typeface.MONOSPACE);
         badge.setBackgroundResource(R.drawable.button_secondary);
         badge.setPadding(12, 10, 12, 10);
-        LinearLayout.LayoutParams badgeLp = matchWrap(0, 20, 0, 0);
-        badge.setLayoutParams(badgeLp);
+        badge.setLayoutParams(matchWrap(0, 20, 0, 0));
         layout.addView(badge);
 
         contentArea.addView(layout);
@@ -491,38 +583,22 @@ public class SetupActivity extends Activity {
 
         layout.addView(createSectionTitle("\ud83d\udd27 SELECT COMPONENTS"));
 
-        // Helper: show installed state in description
         layout.addView(buildComponentRow(COMP_APACHE,
-                "Apache HTTP Server",
-                "Web server — required for PHP execution",
-                wantApache, true /* required */));
+                "Apache HTTP Server", "Web server — required for PHP execution",
+                wantApache, true));
 
         layout.addView(buildComponentRow(COMP_FPM,
-                "PHP-FPM Interpreter",
-                "PHP FastCGI process manager — required",
+                "PHP-FPM Interpreter", "PHP FastCGI process manager — required",
                 wantFpm, true));
 
         layout.addView(buildComponentRow(COMP_MYSQL,
-                "MariaDB Database",
-                "MySQL-compatible database server",
+                "MariaDB Database", "MySQL-compatible database server",
                 wantMysql, false));
 
         layout.addView(buildComponentRow(COMP_PMA,
-                "phpMyAdmin",
-                "Web-based database management UI",
+                "phpMyAdmin", "Web-based database management UI",
                 wantPma, false));
 
-        layout.addView(buildComponentRow(COMP_FTP,
-                "FTP Server",
-                "File transfer protocol server (placeholder)",
-                wantFtp, false));
-
-        layout.addView(buildComponentRow(COMP_WP,
-                "WordPress",
-                "WordPress CMS (placeholder — not yet available)",
-                wantWp, false));
-
-        // Size summary
         TextView sizeInfo = new TextView(this);
         sizeInfo.setText("Estimated install size: ~" + calculateTotalWantedSize() + " MB");
         sizeInfo.setTextColor(getResources().getColor(R.color.text_primary));
@@ -535,13 +611,6 @@ public class SetupActivity extends Activity {
         contentArea.addView(layout);
     }
 
-    /**
-     * Builds one row in the component list.
-     * The checkbox is pre-ticked based on:
-     *   - wantXxx (user's remembered choice) if NOT yet installed
-     *   - isInstalled(comp)                  overrides to checked + green label
-     * Required components (Apache, PHP) are locked to checked.
-     */
     private LinearLayout buildComponentRow(final String comp, String title,
                                            String description, boolean wanted,
                                            final boolean required) {
@@ -549,22 +618,18 @@ public class SetupActivity extends Activity {
 
         LinearLayout container = new LinearLayout(this);
         container.setOrientation(LinearLayout.HORIZONTAL);
-        container.setBackgroundResource(installed
-                ? R.drawable.button_secondary   // could use a green-tinted drawable if desired
-                : R.drawable.button_secondary);
+        container.setBackgroundResource(R.drawable.button_secondary);
         container.setPadding(12, 12, 12, 12);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.setMargins(0, 0, 0, 8);
         container.setLayoutParams(lp);
 
         final CheckBox cb = new CheckBox(this);
-        cb.setChecked(installed || wanted);   // installed → always checked
-        if (required || installed) cb.setEnabled(false);  // lock required & already-installed
+        cb.setChecked(installed || wanted);
+        if (required || installed) cb.setEnabled(false);
         cb.setButtonTintList(getColorStateList(R.color.accent));
 
-        // Store reference for later reads
         if      (comp.equals(COMP_APACHE)) chkApache = cb;
         else if (comp.equals(COMP_FPM))    chkFpm    = cb;
         else if (comp.equals(COMP_MYSQL))  chkMysql  = cb;
@@ -580,7 +645,6 @@ public class SetupActivity extends Activity {
                 else if (comp.equals(COMP_PMA))    wantPma    = isChecked;
                 else if (comp.equals(COMP_FTP))    wantFtp    = isChecked;
                 else if (comp.equals(COMP_WP))     wantWp     = isChecked;
-                // refresh size label — just rebuild to keep it simple
             }
         });
         container.addView(cb);
@@ -597,8 +661,7 @@ public class SetupActivity extends Activity {
         titleView.setTypeface(Typeface.MONOSPACE);
         textLayout.addView(titleView);
 
-        // Status tag
-        TextView statusTag = new TextView(this);
+        final TextView statusTag = new TextView(this);
         if (installed) {
             statusTag.setText("\u2713 INSTALLED");
             statusTag.setTextColor(getResources().getColor(R.color.status_green));
@@ -622,7 +685,6 @@ public class SetupActivity extends Activity {
 
         container.addView(textLayout);
 
-        // Uninstall button — only shown for installed, non-required components
         if (installed && !required) {
             TextView btnRemove = new TextView(this);
             btnRemove.setText("REMOVE");
@@ -633,9 +695,9 @@ public class SetupActivity extends Activity {
             btnRemove.setGravity(android.view.Gravity.CENTER);
             btnRemove.setClickable(true);
             btnRemove.setFocusable(true);
-            final LinearLayout rowRef       = container;
-            final TextView statusTagRef     = statusTag;
-            final CheckBox cbRef            = cb;
+            final LinearLayout rowRef   = container;
+            final TextView statusTagRef = statusTag;
+            final CheckBox cbRef        = cb;
             btnRemove.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
                     confirmAndRemove(comp, statusTagRef, cbRef, rowRef);
@@ -651,21 +713,19 @@ public class SetupActivity extends Activity {
                                   final CheckBox cb, final LinearLayout row) {
         android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(this);
         b.setTitle("Remove " + comp + "?");
-        b.setMessage("This will delete all files in " + getFilesDir() + "/" + comp +
-                ".\n\nAre you sure?");
+        b.setMessage("This will delete all files in " + getFilesDir() + "/" + comp + ".\n\nAre you sure?");
         b.setPositiveButton("REMOVE", new android.content.DialogInterface.OnClickListener() {
             @Override public void onClick(android.content.DialogInterface dialog, int which) {
                 deleteRecursive(new File(getFilesDir(), comp));
-                // Also remove component zip if bundled
                 new File(getFilesDir(), comp + ".zip").delete();
                 cb.setChecked(false);
                 cb.setEnabled(true);
                 statusTag.setText("NOT INSTALLED");
                 statusTag.setTextColor(getResources().getColor(R.color.text_secondary));
-                // hide remove button
                 if (row.getChildCount() > 0) {
                     View last = row.getChildAt(row.getChildCount() - 1);
-                    if (last instanceof TextView && ((TextView)last).getText().toString().equals("REMOVE")) {
+                    if (last instanceof TextView
+                            && "REMOVE".equals(((TextView) last).getText().toString())) {
                         last.setVisibility(View.GONE);
                     }
                 }
@@ -678,15 +738,15 @@ public class SetupActivity extends Activity {
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // STEP 3 — Review & install
+    // STEP 3 — Review & install / finish
     // ═════════════════════════════════════════════════════════════════════════
     private void buildReviewStep() {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
 
-        layout.addView(createSectionTitle("\u2713 REVIEW & INSTALL"));
+        boolean allDone = allSelectedAlreadyInstalled();
+        layout.addView(createSectionTitle(allDone ? "\u2713 ALL COMPONENTS READY" : "\u2713 REVIEW & INSTALL"));
 
-        // Summary card
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setBackgroundResource(R.drawable.button_secondary);
@@ -702,38 +762,25 @@ public class SetupActivity extends Activity {
 
         addSummaryRow(card, "Installer type:", isNetInstaller ? "Net (GitHub)" : "Bundled");
         addSummaryRow(card, "Install path:",   getFilesDir().getAbsolutePath());
-
-        addSummaryRow(card, "Apache:",      formatAction(COMP_APACHE, wantApache));
-        addSummaryRow(card, "PHP-FPM:",     formatAction(COMP_FPM,    wantFpm));
-        addSummaryRow(card, "MariaDB:",     formatAction(COMP_MYSQL,  wantMysql));
-        addSummaryRow(card, "phpMyAdmin:",  formatAction(COMP_PMA,    wantPma));
-        addSummaryRow(card, "FTP Server:",  formatAction(COMP_FTP,    wantFtp));
-        addSummaryRow(card, "WordPress:",   formatAction(COMP_WP,     wantWp));
-        addSummaryRow(card, "Total size:",  calculateTotalWantedSize() + " MB");
-
+        addSummaryRow(card, "Apache:",         formatAction(COMP_APACHE, wantApache));
+        addSummaryRow(card, "PHP-FPM:",        formatAction(COMP_FPM,    wantFpm));
+        addSummaryRow(card, "MariaDB:",        formatAction(COMP_MYSQL,  wantMysql));
+        addSummaryRow(card, "phpMyAdmin:",     formatAction(COMP_PMA,    wantPma));
+        addSummaryRow(card, "Total size:",     calculateTotalWantedSize() + " MB");
         layout.addView(card);
 
-        // Placeholders note
-        TextView note = new TextView(this);
-        note.setText("Note: FTP Server and WordPress are placeholders.\n" +
-                "They will be skipped during installation.");
-        note.setTextColor(getResources().getColor(R.color.text_secondary));
-        note.setTextSize(9);
-        note.setTypeface(Typeface.MONOSPACE);
-        note.setBackgroundResource(R.drawable.button_secondary);
-        note.setPadding(12, 10, 12, 10);
-        note.setLayoutParams(matchWrap(0, 0, 0, 12));
-        layout.addView(note);
-
-        // Warning
-        TextView warning = new TextView(this);
-        warning.setText("\u26A0\uFE0F Installation may take 1–3 minutes.\n" +
-                "Do not close the app during this process.");
-        warning.setTextColor(getResources().getColor(R.color.warning));
-        warning.setTextSize(9);
-        warning.setTypeface(Typeface.MONOSPACE);
-        warning.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
-        layout.addView(warning);
+        TextView footer = new TextView(this);
+        if (allDone) {
+            footer.setText("\u2705 Everything is installed. Tap FINISH to continue.");
+            footer.setTextColor(getResources().getColor(R.color.status_green));
+        } else {
+            footer.setText("\u26A0\uFE0F Installation may take 5\u201330 seconds.\nDo not close the app during this process.");
+            footer.setTextColor(getResources().getColor(R.color.warning));
+        }
+        footer.setTextSize(9);
+        footer.setTypeface(Typeface.MONOSPACE);
+        footer.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        layout.addView(footer);
 
         contentArea.addView(layout);
     }
@@ -750,7 +797,6 @@ public class SetupActivity extends Activity {
     // Installation logic
     // ═════════════════════════════════════════════════════════════════════════
     private void startInstallation() {
-        // Sync checkbox values one more time
         if (chkApache != null) wantApache = chkApache.isChecked();
         if (chkFpm    != null) wantFpm    = chkFpm.isChecked();
         if (chkMysql  != null) wantMysql  = chkMysql.isChecked();
@@ -766,291 +812,110 @@ public class SetupActivity extends Activity {
         pd.show();
 
         new Thread(new Runnable() {
-            @Override public void run() {
-                performInstallation(pd);
-            }
+            @Override public void run() { performInstallation(pd); }
         }).start();
     }
 
+    private void performInstallation(final ProgressDialog pd) {
+        try {
+            // lib.zip
+            updateProgress(pd, 0, 100, "Extracting core libraries...");
+            extractLibZip(pd);
 
-private void performInstallation(final ProgressDialog pd) {
-    try {
-        // FIRST: Extract ALL assets (lib.zip plus any component zips/folders)
-        updateProgress(pd, 0, 100, "Extracting core libraries...");
-        
-        // Extract lib.zip first (contains .so files)
-        extractLibZip(pd);
-        
-        // Extract ALL component assets to a temporary location
-        updateProgress(pd, 20, 100, "Extracting all component assets...");
-        extractAllAssetsToTemp(pd);
-        
-        // Build work list for installation/uninstallation
-        String[][] components = {
-            { COMP_APACHE, String.valueOf(wantApache) },
-            { COMP_FPM,    String.valueOf(wantFpm)    },
-            { COMP_MYSQL,  String.valueOf(wantMysql)  },
-            { COMP_PMA,    String.valueOf(wantPma)    },
-            { COMP_FTP,    String.valueOf(wantFtp)    },
-            { COMP_WP,     String.valueOf(wantWp)     },
-        };
+            String[][] components = {
+                { COMP_APACHE, String.valueOf(wantApache) },
+                { COMP_FPM,    String.valueOf(wantFpm)    },
+                { COMP_MYSQL,  String.valueOf(wantMysql)  },
+                { COMP_PMA,    String.valueOf(wantPma)    },
+                { COMP_FTP,    String.valueOf(wantFtp)    },
+                { COMP_WP,     String.valueOf(wantWp)     },
+            };
 
-        int total = components.length;
-        int done  = 0;
+            int total = components.length;
+            int done  = 0;
 
-        for (String[] entry : components) {
-            final String comp   = entry[0];
-            final boolean want  = Boolean.parseBoolean(entry[1]);
-            final boolean alreadyInstalled = isInstalled(comp);
+            for (String[] entry : components) {
+                final String  comp      = entry[0];
+                final boolean want      = Boolean.parseBoolean(entry[1]);
+                final boolean alreadyIn = isInstalled(comp);
 
-            updateProgress(pd, 40 + (done * 40 / total), total, "Processing " + comp + "...");
+                updateProgress(pd, 20 + (done * 70 / total), total, "Processing " + comp + "...");
 
-            if (want && !alreadyInstalled) {
-                // Install component from temporary location
-                boolean placeholder = comp.equals(COMP_FTP) || comp.equals(COMP_WP);
-                if (!placeholder) {
-                    installComponentFromTemp(comp, pd);
+                if (want && !alreadyIn) {
+                    boolean placeholder = comp.equals(COMP_FTP) || comp.equals(COMP_WP);
+                    if (!placeholder) installComponent(comp, pd);
+                    prefs.edit().putBoolean(comp + "_installed", true).apply();
+                } else if (!want && alreadyIn) {
+                    deleteRecursive(new File(getFilesDir(), comp));
+                    new File(getFilesDir(), comp + ".zip").delete();
+                    prefs.edit().remove(comp + "_installed").apply();
                 }
-                prefs.edit().putBoolean(comp + "_installed", true).apply();
-
-            } else if (!want && alreadyInstalled) {
-                // Remove component
-                deleteRecursive(new File(getFilesDir(), comp));
-                new File(getFilesDir(), comp + ".zip").delete();
-                prefs.edit().remove(comp + "_installed").apply();
-                
-            } else if (want && alreadyInstalled) {
-                // Already installed and wanted - ensure files are present
-                ensureComponentFiles(comp, pd);
+                done++;
             }
-            done++;
+
+            appConfig.save();
+
+            runOnUiThread(new Runnable() {
+                @Override public void run() {
+                    pd.dismiss();
+                    Toast.makeText(SetupActivity.this,
+                            "Done! Components updated.", Toast.LENGTH_LONG).show();
+                    currentStep = STEP_REVIEW;
+                    showStep(currentStep);   // re-draw; button becomes FINISH if all done
+                }
+            });
+
+        } catch (final Exception e) {
+            runOnUiThread(new Runnable() {
+                @Override public void run() {
+                    pd.dismiss();
+                    Toast.makeText(SetupActivity.this,
+                            "Installation failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
+                }
+            });
+        }
+    }
+
+    private void extractLibZip(final ProgressDialog pd) throws IOException {
+        File libDir = new File(getFilesDir(), "lib");
+        if (libDir.exists() && libDir.isDirectory()) {
+            updateProgressMsg(pd, "Native libraries already present...");
+            return;
         }
 
-        // Clean up temporary directory
-        cleanupTempDir();
-        
-        // Persist config
-        appConfig.save();
+        File libZipInFiles = new File(getFilesDir(), LIB_ZIP);
+        if (libZipInFiles.exists()) {
+            updateProgressMsg(pd, "Extracting native libraries...");
+            extractZipTo(libZipInFiles, getFilesDir());
+            libZipInFiles.delete();
+            return;
+        }
+
+        if (assetExists(LIB_ZIP)) {
+            File tmp = new File(getFilesDir(), LIB_ZIP);
+            updateProgressMsg(pd, "Copying native libraries from assets...");
+            copyAssetToFile(LIB_ZIP, tmp);
+            updateProgressMsg(pd, "Extracting native libraries...");
+            extractZipTo(tmp, getFilesDir());
+            tmp.delete();
+            return;
+        }
 
         runOnUiThread(new Runnable() {
             @Override public void run() {
-                pd.dismiss();
                 Toast.makeText(SetupActivity.this,
-                        "Done! Components updated.", Toast.LENGTH_LONG).show();
-                currentStep = STEP_COMPONENTS;
-                showStep(currentStep);
-            }
-        });
-
-    } catch (final Exception e) {
-        runOnUiThread(new Runnable() {
-            @Override public void run() {
-                pd.dismiss();
-                Toast.makeText(SetupActivity.this,
-                        "Installation failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                e.printStackTrace();
-            }
-        });
-    }
-}
-// Temporary directory for extracted assets
-private File getTempDir() {
-    File tempDir = new File(getFilesDir(), ".temp_assets");
-    if (!tempDir.exists()) {
-        tempDir.mkdirs();
-    }
-    return tempDir;
-}
-
-private void cleanupTempDir() {
-    deleteRecursive(getTempDir());
-}
-
-private void extractLibZip(final ProgressDialog pd) throws IOException {
-    File libZipInAssets = new File(getFilesDir(), LIB_ZIP);
-    File libZipInTemp = new File(getTempDir(), LIB_ZIP);
-    
-    // Check if lib.zip exists in various locations
-    boolean libExtracted = false;
-    
-    // Check if already extracted (lib directory exists)
-    File libDir = new File(getFilesDir(), "lib");
-    if (libDir.exists() && libDir.isDirectory()) {
-        updateProgressMsg(pd, "Native libraries already present...");
-        return;
-    }
-    
-    // Try to find and extract lib.zip
-    if (libZipInAssets.exists()) {
-        updateProgressMsg(pd, "Extracting native libraries...");
-        extractZipTo(libZipInAssets, getFilesDir());
-        libZipInAssets.delete();
-        libExtracted = true;
-    } 
-    else if (assetExists(LIB_ZIP)) {
-        updateProgressMsg(pd, "Copying native libraries from assets...");
-        copyAssetToFile(LIB_ZIP, libZipInTemp);
-        updateProgressMsg(pd, "Extracting native libraries...");
-        extractZipTo(libZipInTemp, getFilesDir());
-        libExtracted = true;
-    }
-    
-    if (!libExtracted) {
-        // Log warning but continue
-        runOnUiThread(new Runnable() {
-            @Override public void run() {
-                Toast.makeText(SetupActivity.this, 
-                    "Warning: lib.zip not found - native libraries may be missing", 
-                    Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-}
-
-private void extractAllAssetsToTemp(final ProgressDialog pd) throws IOException {
-    File tempDir = getTempDir();
-    
-    // List of all possible components
-    String[] components = {COMP_APACHE, COMP_FPM, COMP_MYSQL, COMP_PMA, COMP_FTP, COMP_WP};
-    
-    for (String comp : components) {
-        File compTempDir = new File(tempDir, comp);
-        
-        // Skip if already extracted to temp
-        if (compTempDir.exists() && compTempDir.isDirectory()) {
-            continue;
-        }
-        
-        updateProgressMsg(pd, "Preparing " + comp + " files...");
-        
-        // Try to extract from zip first
-        boolean extracted = tryExtractComponentFromZip(comp, tempDir, pd);
-        
-        if (!extracted) {
-            // Try to copy from assets folder
-            tryCopyComponentFromAssets(comp, compTempDir);
-        }
-    }
-}
-
-private boolean tryExtractComponentFromZip(String comp, File destDir, ProgressDialog pd) throws IOException {
-    File zipInFiles = new File(getFilesDir(), comp + ".zip");
-    File zipAlt = new File(getFilesDir(), "assets_" + comp + ".zip");
-    File tempZip = new File(getTempDir(), comp + ".zip");
-    
-    // Check various zip locations
-    if (zipInFiles.exists()) {
-        extractZipTo(zipInFiles, destDir);
-        zipInFiles.delete();
-        return true;
-    }
-    else if (zipAlt.exists()) {
-        extractZipTo(zipAlt, destDir);
-        zipAlt.delete();
-        return true;
-    }
-    else if (assetExists(comp + ".zip")) {
-        copyAssetToFile(comp + ".zip", tempZip);
-        extractZipTo(tempZip, destDir);
-        tempZip.delete();
-        return true;
-    }
-    else if (assetExists("assets_" + comp + ".zip")) {
-        copyAssetToFile("assets_" + comp + ".zip", tempZip);
-        extractZipTo(tempZip, destDir);
-        tempZip.delete();
-        return true;
-    }
-    
-    return false;
-}
-
-private void tryCopyComponentFromAssets(String comp, File targetDir) throws IOException {
-    String[] assetFiles = getAssets().list(comp);
-    if (assetFiles != null && assetFiles.length > 0) {
-        copyAssetDirToFile(comp, targetDir);
-    }
-}
-
-private void installComponentFromTemp(String comp, ProgressDialog pd) throws IOException {
-    File tempCompDir = new File(getTempDir(), comp);
-    File targetDir = new File(getFilesDir(), comp);
-    
-    if (tempCompDir.exists() && tempCompDir.isDirectory()) {
-        updateProgressMsg(pd, "Installing " + comp + "...");
-        
-        // Ensure parent directory exists
-        targetDir.getParentFile().mkdirs();
-        
-        // Copy from temp to final location
-        copyRecursive(tempCompDir, targetDir);
-    } else {
-        // Fallback to original installComponent method
-       // installComponent(comp, pd);
-       /*
-       ----------
-       1. ERROR in /storage/emulated/0/.sketchware/data/717/files/java/SetupActivity.java (at line 989)
-       installComponent(comp, pd);
-       ^^^^^^^^^^^^^^^^^^^^^^^^^^
-       Unhandled exception type Exception
-       ----------
-       1 problem (1 error)
-       */
-    }
-}
-
-private void ensureComponentFiles(String comp, ProgressDialog pd) throws IOException {
-    File targetDir = new File(getFilesDir(), comp);
-    File tempCompDir = new File(getTempDir(), comp);
-    
-    // If component directory is empty or missing files, restore from temp
-    if (!targetDir.exists() || targetDir.listFiles().length == 0) {
-        if (tempCompDir.exists() && tempCompDir.isDirectory()) {
-            updateProgressMsg(pd, "Restoring " + comp + " files...");
-            targetDir.mkdirs();
-            copyRecursive(tempCompDir, targetDir);
-        }
-    }
-}
-
-private void copyRecursive(File src, File dst) throws IOException {
-    if (src.isDirectory()) {
-        if (!dst.exists()) {
-            dst.mkdirs();
-        }
-        String[] children = src.list();
-        if (children != null) {
-            for (String child : children) {
-                copyRecursive(new File(src, child), new File(dst, child));
-            }
-        }
-    } else {
-        // Ensure parent directories exist
-        dst.getParentFile().mkdirs();
-        
-        java.nio.file.Files.copy(src.toPath(), dst.toPath(), 
-            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-    }
-}
-
-    private void updateProgress(final ProgressDialog pd,
-                                final int done, final int total,
-                                final String msg) {
-        runOnUiThread(new Runnable() {
-            @Override public void run() {
-                pd.setProgress(total > 0 ? (done * 100 / total) : 0);
-                if (msg != null) pd.setMessage(msg);
+                        "Warning: lib.zip not found — native libraries may be missing",
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     /**
-     * Installs one component. Sources are checked in order:
-     *   1. Already-extracted folder in files/  → skip (already done)
-     *   2. Zip file in files/<comp>.zip        → extract in-place
-     *   3. Asset named <comp>.zip              → copy then extract
-     *   4. Asset named assets_<comp>.zip       → copy then extract
-     *   5. Folder in assets/<comp>/            → copy files directly
+     * Install one component. By the time we get here the master zip has already
+     * been extracted to filesDir (during STEP_PREPARE), so the component folder
+     * should already be present. This method is a safety net for cases where
+     * a component zip is stored alongside the folder.
      */
     private void installComponent(final String comp, final ProgressDialog pd) throws Exception {
         File destDir    = getFilesDir();
@@ -1058,10 +923,8 @@ private void copyRecursive(File src, File dst) throws IOException {
         File zipInFiles = new File(destDir, comp + ".zip");
         File zipAlt     = new File(destDir, "assets_" + comp + ".zip");
 
-        // Already extracted?
         if (targetDir.exists() && targetDir.isDirectory()) return;
 
-        // Zip already in files/?
         if (zipInFiles.exists()) {
             updateProgressMsg(pd, "Extracting " + comp + "...");
             extractZipTo(zipInFiles, destDir);
@@ -1075,27 +938,22 @@ private void copyRecursive(File src, File dst) throws IOException {
             return;
         }
 
-        // Try asset: <comp>.zip
         if (assetExists(comp + ".zip")) {
             updateProgressMsg(pd, "Copying " + comp + ".zip from assets...");
             copyAssetToFile(comp + ".zip", zipInFiles);
-            updateProgressMsg(pd, "Extracting " + comp + "...");
             extractZipTo(zipInFiles, destDir);
             zipInFiles.delete();
             return;
         }
 
-        // Try asset: assets_<comp>.zip
         if (assetExists("assets_" + comp + ".zip")) {
             updateProgressMsg(pd, "Copying assets_" + comp + ".zip from assets...");
             copyAssetToFile("assets_" + comp + ".zip", zipAlt);
-            updateProgressMsg(pd, "Extracting " + comp + "...");
             extractZipTo(zipAlt, destDir);
             zipAlt.delete();
             return;
         }
 
-        // Try flat asset folder: <comp>/
         String[] assetFiles = getAssets().list(comp);
         if (assetFiles != null && assetFiles.length > 0) {
             updateProgressMsg(pd, "Copying " + comp + " from assets...");
@@ -1103,12 +961,21 @@ private void copyRecursive(File src, File dst) throws IOException {
             return;
         }
 
-        // Not found — log and skip (don't throw, allow other components to continue)
         runOnUiThread(new Runnable() {
             @Override public void run() {
                 Toast.makeText(SetupActivity.this,
                         "Warning: source not found for " + comp + ", skipped.",
                         Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void updateProgress(final ProgressDialog pd, final int done,
+                                final int total, final String msg) {
+        runOnUiThread(new Runnable() {
+            @Override public void run() {
+                pd.setProgress(total > 0 ? (done * 100 / total) : 0);
+                if (msg != null) pd.setMessage(msg);
             }
         });
     }
@@ -1121,7 +988,7 @@ private void copyRecursive(File src, File dst) throws IOException {
         });
     }
 
-    // ─── Asset helpers ───────────────────────────────────────────────────────
+    // ─── Asset helpers ────────────────────────────────────────────────────────
 
     private boolean assetExists(String name) {
         try {
@@ -1133,9 +1000,8 @@ private void copyRecursive(File src, File dst) throws IOException {
         }
     }
 
-    /** Copy a single asset file to a File on disk. */
     private void copyAssetToFile(String assetName, File dest) throws IOException {
-        InputStream in  = getAssets().open(assetName);
+        InputStream in = getAssets().open(assetName);
         FileOutputStream out = new FileOutputStream(dest);
         byte[] buf = new byte[8192];
         int n;
@@ -1144,7 +1010,32 @@ private void copyRecursive(File src, File dst) throws IOException {
         out.close();
     }
 
-    /** Recursively copy an asset directory to a File directory. */
+    /**
+     * Same as copyAssetToFile but posts progress to the prepare progress bar
+     * (0→50%) so the user sees something happening for large bundled zips.
+     */
+    private void copyAssetToFileWithProgress(String assetName, File dest) throws IOException {
+        InputStream in = getAssets().open(assetName);
+        FileOutputStream out = new FileOutputStream(dest);
+        byte[] buf = new byte[8192];
+        int n;
+        long written = 0;
+        // We don't know the total size from AssetManager, so just pulse every 512 KB
+        int pulse = 0;
+        while ((n = in.read(buf)) != -1) {
+            out.write(buf, 0, n);
+            written += n;
+            pulse++;
+            if (pulse % 64 == 0) {
+                // slowly advance 0→48
+                final int pct = (int) Math.min(48, written / (1024 * 20));
+                setPrepareProgress(pct);
+            }
+        }
+        in.close();
+        out.close();
+    }
+
     private void copyAssetDirToFile(String assetPath, File destDir) throws IOException {
         destDir.mkdirs();
         String[] children = getAssets().list(assetPath);
@@ -1160,16 +1051,14 @@ private void copyRecursive(File src, File dst) throws IOException {
         }
     }
 
-    // ─── Zip extraction ──────────────────────────────────────────────────────
+    // ─── Zip extraction ───────────────────────────────────────────────────────
 
     private void extractZipTo(File zipFile, File destDir) throws IOException {
         ZipInputStream zis = new ZipInputStream(new java.io.FileInputStream(zipFile));
         ZipEntry entry;
         byte[] buf = new byte[8192];
-
         while ((entry = zis.getNextEntry()) != null) {
             File target = new File(destDir, entry.getName());
-
             if (entry.isDirectory()) {
                 target.mkdirs();
             } else {
@@ -1184,36 +1073,28 @@ private void copyRecursive(File src, File dst) throws IOException {
         zis.close();
     }
 
-    // ─── File removal ────────────────────────────────────────────────────────
+    // ─── File removal ─────────────────────────────────────────────────────────
 
     private void deleteRecursive(File file) {
         if (file == null || !file.exists()) return;
         if (file.isDirectory()) {
             File[] children = file.listFiles();
-            if (children != null) {
-                for (File child : children) deleteRecursive(child);
-            }
+            if (children != null) for (File child : children) deleteRecursive(child);
         }
         file.delete();
     }
 
-    // ─── Component detection ─────────────────────────────────────────────────
+    // ─── Component detection ──────────────────────────────────────────────────
 
-    /**
-     * A component is considered installed when its folder exists in filesDir.
-     * For required components (Apache, fpm) we also trust the prefs flag as a
-     * fallback so a first-run install isn't re-triggered on every launch.
-     */
     private boolean isInstalled(String comp) {
         File dir = new File(getFilesDir(), comp);
         return dir.exists() && dir.isDirectory();
     }
 
-    // ─── Validation ──────────────────────────────────────────────────────────
+    // ─── Validation ───────────────────────────────────────────────────────────
 
     private boolean validateStep1() {
-        File path = getFilesDir();
-        long freeBytes = path.getFreeSpace();
+        long freeBytes    = getFilesDir().getFreeSpace();
         long requiredBytes = (long) calculateTotalWantedSize() * 1024 * 1024;
         if (freeBytes < requiredBytes) {
             Toast.makeText(this, "Not enough free space! Need ~"
@@ -1233,19 +1114,16 @@ private void copyRecursive(File src, File dst) throws IOException {
         return true;
     }
 
-    // ─── Size estimate ───────────────────────────────────────────────────────
+    // ─── Size estimate ────────────────────────────────────────────────────────
 
-private int calculateTotalWantedSize() {
-    int size = 0;
-    if (wantApache) size += 28;
-    if (wantFpm)    size += 23;
-    if (wantMysql)  size += 37;
-    if (wantPma)    size += 55;
-    // Add lib size (estimate)
-    size += 78; // Approximate size for .so files
-    // FTP, WP: placeholder, 0 MB
-    return size;
-}
+    private int calculateTotalWantedSize() {
+        int size = 78; // lib
+        if (wantApache) size += 28;
+        if (wantFpm)    size += 23;
+        if (wantMysql)  size += 37;
+        if (wantPma)    size += 55;
+        return size;
+    }
 
     // ═════════════════════════════════════════════════════════════════════════
     // UI helpers
