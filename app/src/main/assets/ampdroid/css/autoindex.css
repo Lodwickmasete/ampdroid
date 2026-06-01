@@ -1,0 +1,27 @@
+body {
+  font-family: sans-serif;
+  margin: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+td {
+  padding: 5px;
+  border-bottom: 1px solid #eee;
+}
+
+img {
+  max-width: 16px;
+  height: auto;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+@media (max-width: 600px) {
+  table {
+    font-size: 12px;
+  }
+}
