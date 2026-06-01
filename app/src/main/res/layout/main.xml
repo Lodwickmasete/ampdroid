@@ -36,9 +36,10 @@
             android:gravity="center_vertical">
 
             <TextView
+                android:id="@+id/txtAppLogo"
                 android:layout_width="34dp"
                 android:layout_height="34dp"
-                android:text="🐘"
+                android:text="☰"
                 android:textSize="18sp"
                 android:gravity="center"
                 android:background="#21262D"/>
@@ -52,7 +53,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="PHP Server Manager"
+                    android:text="AmpDroid Server"
                     android:textColor="#E6EDF3"
                     android:textSize="15sp"
                     android:textStyle="bold"
@@ -61,7 +62,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="v3.0 · Apache + PHP-FPM + MariaDB"
+                    android:text="v1.0 · Apache + PHP-FPM + MariaDB"
                     android:textColor="#7D8590"
                     android:textSize="9sp"
                     android:fontFamily="monospace"/>
@@ -97,92 +98,6 @@
             android:clickable="true"
             android:focusable="true"/>
 
-    </LinearLayout>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         SERVICE CONTROL BAR
-         Each button is a toggling indicator per service.
-    ═══════════════════════════════════════════════════════════ -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="#161B22"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
-        android:paddingBottom="10dp"
-        android:paddingTop="8dp">
-
-        <!-- START ALL row -->
-        <TextView
-            android:id="@+id/btnStartAll"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:text="⚡  START ALL SERVICES"
-            android:textSize="12sp"
-            android:fontFamily="monospace"
-            android:textStyle="bold"
-            android:textColor="#0D1117"
-            android:background="#58A6FF"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
-            android:layout_marginBottom="8dp"/>
-
-        <!-- Per-service toggles -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/btnTogglePhp"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:text="▶ PHP-FPM"
-                android:textSize="10sp"
-                android:fontFamily="monospace"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:background="#586069"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginEnd="4dp"/>
-
-            <TextView
-                android:id="@+id/btnToggleApache"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:text="▶ Apache"
-                android:textSize="10sp"
-                android:fontFamily="monospace"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:background="#586069"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginEnd="4dp"/>
-
-            <TextView
-                android:id="@+id/btnToggleDb"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:text="▶ Database"
-                android:textSize="10sp"
-                android:fontFamily="monospace"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:background="#586069"
-                android:clickable="true"
-                android:focusable="true"/>
-
-        </LinearLayout>
     </LinearLayout>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -283,754 +198,761 @@
             android:orientation="vertical"
             android:padding="10dp">
 
-            <!-- ─────────────────────────────────────────
-                 SECTION: SERVER CONFIGURATION
-            ───────────────────────────────────────── -->
-            <LinearLayout
-                android:id="@+id/headerConfig"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:orientation="horizontal"
-                android:background="#21262D"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:gravity="center_vertical"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginBottom="1dp">
 
-                <TextView android:layout_width="22dp" android:layout_height="wrap_content"
-                    android:text="⚙" android:textColor="#58A6FF" android:textSize="14sp"
-                    android:layout_marginEnd="8dp"/>
+<!-- ─────────────────────────────────────────
+     SECTION: SERVER CONFIGURATION
+───────────────────────────────────────── -->
+<LinearLayout
+    android:id="@+id/headerConfig"
+    android:layout_width="match_parent"
+    android:layout_height="44dp"
+    android:orientation="horizontal"
+    android:background="@drawable/section_header_bg"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:focusable="true"
+    android:layout_marginBottom="1dp"
+    android:elevation="2dp">
 
-                <TextView
-                    android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="SERVER CONFIGURATION"
-                    android:textStyle="bold" android:textSize="11sp"
-                    android:fontFamily="monospace" android:textColor="#E6EDF3"
-                    android:letterSpacing="0.08"/>
+    <TextView android:layout_width="22dp" android:layout_height="wrap_content"
+        android:text="⚙" android:textColor="#58A6FF" android:textSize="14sp"
+        android:layout_marginEnd="8dp"/>
 
-                <TextView
-                    android:id="@+id/txtCollapseIcon"
+    <TextView
+        android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="SERVER CONFIGURATION"
+        android:textStyle="bold" android:textSize="11sp"
+        android:fontFamily="monospace" android:textColor="#E6EDF3"
+        android:letterSpacing="0.08"/>
+
+    <TextView
+        android:id="@+id/txtCollapseIcon"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="▶" android:textSize="11sp" android:textColor="#7D8590"/>
+</LinearLayout>
+
+<LinearLayout
+    android:id="@+id/configContent"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/section_content_bg"
+    android:padding="14dp"
+    android:layout_marginBottom="2dp"
+    android:visibility="gone">
+
+    <!-- Server Type -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+            android:text="Server Type:" android:textSize="11sp"
+            android:fontFamily="monospace" android:textColor="#7D8590"/>
+        <Spinner android:id="@+id/spinnerServerType"
+            android:layout_width="0dp" android:layout_height="34dp"
+            android:layout_weight="1" android:background="@drawable/spinner_bg"
+            android:paddingStart="8dp"/>
+    </LinearLayout>
+
+    <!-- PHP Process Mode label -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="PHP PROCESS MODE" android:textSize="9sp"
+        android:fontFamily="monospace" android:textColor="#58A6FF"
+        android:letterSpacing="0.1" android:layout_marginBottom="6dp"/>
+
+    <!-- CLI / FPM Toggle -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:background="@drawable/toggle_container_bg"
+        android:padding="4dp" android:layout_marginBottom="10dp">
+
+        <RadioGroup android:id="@+id/radioGroupPhpMode"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical"
+                android:background="@drawable/toggle_option_left"
+                android:padding="8dp"
+                android:layout_marginEnd="2dp" android:gravity="center">
+
+                <RadioButton android:id="@+id/radioCli"
                     android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="▶" android:textSize="11sp" android:textColor="#7D8590"/>
+                    android:text="CLI" android:textColor="#E6EDF3" android:textSize="12sp"
+                    android:fontFamily="monospace" android:textStyle="bold"
+                    android:checked="false" android:buttonTint="#58A6FF"
+                    android:layout_gravity="center_horizontal"/>
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Built-in :9000" android:textColor="#7D8590"
+                    android:textSize="9sp" android:fontFamily="monospace"
+                    android:gravity="center" android:layout_marginTop="2dp"/>
             </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/configContent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#161B22"
-                android:padding="14dp"
-                android:layout_marginBottom="2dp"
-                android:visibility="gone">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical"
+                android:background="@drawable/toggle_option_right"
+                android:padding="8dp"
+                android:layout_marginStart="2dp" android:gravity="center">
 
-                <!-- Server Type -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:layout_marginBottom="12dp">
-                    <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                        android:text="Server Type:" android:textSize="11sp"
-                        android:fontFamily="monospace" android:textColor="#7D8590"/>
-                    <Spinner android:id="@+id/spinnerServerType"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1" android:background="#21262D"
-                        android:paddingStart="8dp"/>
-                </LinearLayout>
-
-                <!-- PHP Process Mode label -->
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="PHP PROCESS MODE" android:textSize="9sp"
-                    android:fontFamily="monospace" android:textColor="#58A6FF"
-                    android:letterSpacing="0.1" android:layout_marginBottom="6dp"/>
-
-                <!-- CLI / FPM Toggle -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:background="#21262D"
-                    android:padding="4dp" android:layout_marginBottom="10dp">
-
-                    <RadioGroup android:id="@+id/radioGroupPhpMode"
-                        android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                            android:layout_weight="1" android:orientation="vertical"
-                            android:background="#0D1117" android:padding="8dp"
-                            android:layout_marginEnd="2dp" android:gravity="center">
-
-                            <RadioButton android:id="@+id/radioCli"
-                                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="CLI" android:textColor="#E6EDF3" android:textSize="12sp"
-                                android:fontFamily="monospace" android:textStyle="bold"
-                                android:checked="false" android:buttonTint="#58A6FF"
-                                android:layout_gravity="center_horizontal"/>
-
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="Built-in :9000" android:textColor="#7D8590"
-                                android:textSize="9sp" android:fontFamily="monospace"
-                                android:gravity="center" android:layout_marginTop="2dp"/>
-                        </LinearLayout>
-
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                            android:layout_weight="1" android:orientation="vertical"
-                            android:background="#0D1117" android:padding="8dp"
-                            android:layout_marginStart="2dp" android:gravity="center">
-
-                            <RadioButton android:id="@+id/radioFpm"
-                                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="FPM" android:textColor="#E6EDF3" android:textSize="12sp"
-                                android:fontFamily="monospace" android:textStyle="bold"
-                                android:checked="true" android:buttonTint="#3FB950"
-                                android:layout_gravity="center_horizontal"/>
-
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="FastCGI Process" android:textColor="#7D8590"
-                                android:textSize="9sp" android:fontFamily="monospace"
-                                android:gravity="center" android:layout_marginTop="2dp"/>
-                        </LinearLayout>
-                    </RadioGroup>
-                </LinearLayout>
-
-                <!-- FPM Settings (shown when FPM selected) -->
-                <LinearLayout android:id="@+id/layoutFpmSettings"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="vertical" android:background="#0D1117"
-                    android:padding="10dp" android:layout_marginBottom="10dp"
-                    android:visibility="visible">
-
-                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:text="FPM POOL SETTINGS" android:textSize="9sp"
-                        android:fontFamily="monospace" android:textColor="#3FB950"
-                        android:letterSpacing="0.1" android:layout_marginBottom="6dp"/>
-
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:orientation="horizontal" android:layout_marginBottom="6dp"
-                        android:gravity="center_vertical">
-                        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                            android:text="FPM Port:" android:textSize="11sp"
-                            android:fontFamily="monospace" android:textColor="#7D8590"/>
-                        <EditText android:id="@+id/txtFpmPort"
-                            android:layout_width="0dp" android:layout_height="34dp"
-                            android:layout_weight="1" android:text="9000"
-                            android:textColor="#E6EDF3" android:textSize="11sp"
-                            android:fontFamily="monospace" android:background="#21262D"
-                            android:inputType="number" android:paddingStart="8dp" android:singleLine="true"/>
-                    </LinearLayout>
-
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:orientation="horizontal" android:layout_marginBottom="6dp"
-                        android:gravity="center_vertical">
-                        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                            android:text="Max Children:" android:textSize="11sp"
-                            android:fontFamily="monospace" android:textColor="#7D8590"/>
-                        <EditText android:id="@+id/txtFpmMaxChildren"
-                            android:layout_width="0dp" android:layout_height="34dp"
-                            android:layout_weight="1" android:text="5"
-                            android:textColor="#E6EDF3" android:textSize="11sp"
-                            android:fontFamily="monospace" android:background="#21262D"
-                            android:inputType="number" android:paddingStart="8dp" android:singleLine="true"/>
-                    </LinearLayout>
-
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:orientation="horizontal" android:gravity="center_vertical">
-                        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                            android:text="Socket Path:" android:textSize="11sp"
-                            android:fontFamily="monospace" android:textColor="#7D8590"/>
-                        <EditText android:id="@+id/txtFpmSocket"
-                            android:layout_width="0dp" android:layout_height="34dp"
-                            android:layout_weight="1"
-                            android:hint="/data/.../tmp/php-fpm.sock"
-                            android:textColor="#E6EDF3" android:textSize="10sp"
-                            android:fontFamily="monospace" android:background="#21262D"
-                            android:paddingStart="8dp" android:singleLine="true"/>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp"
-                    android:background="#21262D" android:layout_marginBottom="10dp"/>
-
-                <!-- PHP Settings label -->
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="PHP SETTINGS" android:textSize="9sp"
-                    android:fontFamily="monospace" android:textColor="#58A6FF"
-                    android:letterSpacing="0.1" android:layout_marginBottom="8dp"/>
-
-                <!-- PHP Version -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical">
-                    <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                        android:text="PHP Version:" android:textSize="11sp"
-                        android:fontFamily="monospace" android:textColor="#7D8590"/>
-                    <Spinner android:id="@+id/spinnerPhpVersion"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1" android:background="#21262D"
-                        android:paddingStart="8dp"/>
-                </LinearLayout>
-
-                <!-- Memory Limit -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical">
-                    <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                        android:text="Memory Limit:" android:textSize="11sp"
-                        android:fontFamily="monospace" android:textColor="#7D8590"/>
-                    <EditText android:id="@+id/txtMemoryLimit"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1" android:text="128M"
-                        android:textColor="#E6EDF3" android:textSize="11sp"
-                        android:fontFamily="monospace" android:background="#21262D"
-                        android:paddingStart="8dp" android:singleLine="true"/>
-                </LinearLayout>
-
-                <!-- Exec Timeout -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical">
-                    <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                        android:text="Exec Timeout:" android:textSize="11sp"
-                        android:fontFamily="monospace" android:textColor="#7D8590"/>
-                    <EditText android:id="@+id/txtMaxExecTime"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1" android:text="30"
-                        android:textColor="#E6EDF3" android:textSize="11sp"
-                        android:fontFamily="monospace" android:background="#21262D"
-                        android:inputType="number" android:paddingStart="8dp" android:singleLine="true"/>
-                    <TextView android:layout_width="26dp" android:layout_height="wrap_content"
-                        android:text="sec" android:textSize="9sp" android:fontFamily="monospace"
-                        android:textColor="#7D8590" android:layout_marginStart="4dp"/>
-                </LinearLayout>
-
-                <!-- Upload Max -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="10dp"
-                    android:gravity="center_vertical">
-                    <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                        android:text="Upload Max:" android:textSize="11sp"
-                        android:fontFamily="monospace" android:textColor="#7D8590"/>
-                    <EditText android:id="@+id/txtUploadMaxSize"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1" android:text="64M"
-                        android:textColor="#E6EDF3" android:textSize="11sp"
-                        android:fontFamily="monospace" android:background="#21262D"
-                        android:paddingStart="8dp" android:singleLine="true"/>
-                </LinearLayout>
-
-                <!-- PHP Flags -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="4dp">
-                    <CheckBox android:id="@+id/chkDisplayErrors"
-                        android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:text="Display Errors"
-                        android:textColor="#E6EDF3" android:textSize="11sp"
-                        android:fontFamily="monospace" android:buttonTint="#58A6FF"/>
-                    <CheckBox android:id="@+id/chkAllowUrlFopen"
-                        android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:text="URL fopen"
-                        android:textColor="#E6EDF3" android:textSize="11sp"
-                        android:fontFamily="monospace" android:buttonTint="#58A6FF"/>
-                </LinearLayout>
-
-                <CheckBox android:id="@+id/chkOpcache"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Enable OPcache"
-                    android:textColor="#E6EDF3" android:textSize="11sp"
-                    android:fontFamily="monospace" android:buttonTint="#58A6FF"
-                    android:layout_marginBottom="10dp"/>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp"
-                    android:background="#21262D" android:layout_marginBottom="10dp"/>
-
-                <!-- HTTP Server Settings label -->
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="HTTP SERVER SETTINGS" android:textSize="9sp"
-                    android:fontFamily="monospace" android:textColor="#58A6FF"
-                    android:letterSpacing="0.1" android:layout_marginBottom="8dp"/>
-
-                <!-- Apache Port -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical">
-                    <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                        android:text="Apache Port:" android:textSize="11sp"
-                        android:fontFamily="monospace" android:textColor="#7D8590"/>
-                    <EditText android:id="@+id/txtPort"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1" android:text="8080"
-                        android:textColor="#E6EDF3" android:textSize="11sp"
-                        android:fontFamily="monospace" android:background="#21262D"
-                        android:inputType="number" android:paddingStart="8dp" android:singleLine="true"/>
-                </LinearLayout>
-
-                <!-- Document Root -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical">
-                    <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                        android:text="Doc Root:" android:textSize="11sp"
-                        android:fontFamily="monospace" android:textColor="#7D8590"/>
-                    <EditText android:id="@+id/txtDocumentRoot"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1"
-                        android:text="/data/data/com.lodwickmasete.php/files/www"
-                        android:textColor="#3FB950" android:textSize="10sp"
-                        android:fontFamily="monospace" android:background="#21262D"
-                        android:paddingStart="8dp" android:singleLine="true"/>
-                    <TextView android:id="@+id/btnSelectDocRoot"
-                        android:layout_width="60dp" android:layout_height="34dp"
-                        android:text="Browse" android:textSize="9sp"
-                        android:fontFamily="monospace" android:textColor="#58A6FF"
-                        android:background="#21262D" android:gravity="center"
-                        android:clickable="true" android:focusable="true"
-                        android:layout_marginStart="4dp"/>
-                </LinearLayout>
-
-                <!-- httpd.conf -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical">
-                    <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                        android:text="httpd.conf:" android:textSize="11sp"
-                        android:fontFamily="monospace" android:textColor="#7D8590"/>
-                    <EditText android:id="@+id/txtHttpdConf"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1"
-                        android:text="/data/data/com.lodwickmasete.php/files/Apache/apache2/httpd.conf"
-                        android:textColor="#3FB950" android:textSize="9sp"
-                        android:fontFamily="monospace" android:background="#21262D"
-                        android:paddingStart="8dp" android:singleLine="true"/>
-                    <TextView android:id="@+id/btnSelectHttpdConf"
-                        android:layout_width="60dp" android:layout_height="34dp"
-                        android:text="Browse" android:textSize="9sp"
-                        android:fontFamily="monospace" android:textColor="#58A6FF"
-                        android:background="#21262D" android:gravity="center"
-                        android:clickable="true" android:focusable="true"
-                        android:layout_marginStart="4dp"/>
-                </LinearLayout>
-
-                <!-- Error Log -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical">
-                    <TextView android:layout_width="110dp" android:layout_height="wrap_content"
-                        android:text="Error Log:" android:textSize="11sp"
-                        android:fontFamily="monospace" android:textColor="#7D8590"/>
-                    <EditText android:id="@+id/txtErrorLog"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1"
-                        android:text="/data/data/com.lodwickmasete.php/files/logs/apache2/error.log"
-                        android:textColor="#3FB950" android:textSize="9sp"
-                        android:fontFamily="monospace" android:background="#21262D"
-                        android:paddingStart="8dp" android:singleLine="true"/>
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- ─────────────────────────────────────────
-                 SECTION: DATABASE
-            ───────────────────────────────────────── -->
-            <LinearLayout
-                android:id="@+id/headerDatabase"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:orientation="horizontal"
-                android:background="#21262D"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:gravity="center_vertical"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginBottom="1dp"
-                android:layout_marginTop="6dp">
-
-                <TextView android:layout_width="22dp" android:layout_height="wrap_content"
-                    android:text="🗄" android:textSize="14sp" android:layout_marginEnd="8dp"/>
-
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:text="DATABASE &amp; phpMyAdmin"
-                    android:textStyle="bold" android:textSize="11sp"
-                    android:fontFamily="monospace" android:textColor="#E6EDF3"
-                    android:letterSpacing="0.08"/>
-
-                <TextView android:id="@+id/txtDatabaseCollapseIcon"
+                <RadioButton android:id="@+id/radioFpm"
                     android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="▶" android:textSize="11sp" android:textColor="#7D8590"/>
+                    android:text="FPM" android:textColor="#E6EDF3" android:textSize="12sp"
+                    android:fontFamily="monospace" android:textStyle="bold"
+                    android:checked="true" android:buttonTint="#3FB950"
+                    android:layout_gravity="center_horizontal"/>
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="FastCGI Process" android:textColor="#7D8590"
+                    android:textSize="9sp" android:fontFamily="monospace"
+                    android:gravity="center" android:layout_marginTop="2dp"/>
             </LinearLayout>
+        </RadioGroup>
+    </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/databaseContent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#161B22"
-                android:padding="14dp"
-                android:layout_marginBottom="2dp"
-                android:visibility="gone">
+    <!-- FPM Settings (shown when FPM selected) -->
+    <LinearLayout android:id="@+id/layoutFpmSettings"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:background="@drawable/fpm_settings_bg"
+        android:padding="10dp" android:layout_marginBottom="10dp"
+        android:visibility="visible">
 
-                <!-- MySQL status -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:layout_marginBottom="10dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:text="MySQL / MariaDB"
-                        android:textSize="12sp" android:fontFamily="monospace"
-                        android:textColor="#E6EDF3" android:textStyle="bold"/>
-                    <TextView android:id="@+id/txtMysqlStatus"
-                        android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text="● OFFLINE" android:textColor="#F85149"
-                        android:textSize="9sp" android:fontFamily="monospace" android:textStyle="bold"/>
-                </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="FPM POOL SETTINGS" android:textSize="9sp"
+            android:fontFamily="monospace" android:textColor="#3FB950"
+            android:letterSpacing="0.1" android:layout_marginBottom="6dp"/>
 
-                <!-- DB controls -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="12dp">
-<TextView android:id="@+id/btnStartMySQL"
-    android:layout_width="0dp" android:layout_height="36dp"
-    android:layout_weight="1" android:text="▶ Start MySQL"
-    android:textSize="11sp" android:fontFamily="monospace"
-    android:textColor="#FFFFFF" android:background="@drawable/button_success"
-    android:gravity="center" android:clickable="true"
-    android:focusable="true" android:layout_marginEnd="4dp"/>
-<TextView android:id="@+id/btnStopMySQL"
-    android:layout_width="0dp" android:layout_height="36dp"
-    android:layout_weight="1" android:text="■ Stop MySQL"
-    android:textSize="11sp" android:fontFamily="monospace"
-    android:textColor="#FFFFFF" android:background="@drawable/button_danger"
-    android:gravity="center" android:clickable="true"
-    android:focusable="true" android:layout_marginStart="4dp"/>
-                </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="6dp"
+            android:gravity="center_vertical">
+            <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+                android:text="FPM Port:" android:textSize="11sp"
+                android:fontFamily="monospace" android:textColor="#7D8590"/>
+            <EditText android:id="@+id/txtFpmPort"
+                android:layout_width="0dp" android:layout_height="34dp"
+                android:layout_weight="1" android:text="9000"
+                android:textColor="#E6EDF3" android:textSize="11sp"
+                android:fontFamily="monospace" android:background="@drawable/input_bg"
+                android:inputType="number" android:paddingStart="8dp" android:singleLine="true"/>
+        </LinearLayout>
 
-                <!-- MySQL conn info -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:background="#0D1117"
-                    android:padding="10dp" android:layout_marginBottom="12dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="6dp"
+            android:gravity="center_vertical">
+            <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+                android:text="Max Children:" android:textSize="11sp"
+                android:fontFamily="monospace" android:textColor="#7D8590"/>
+            <EditText android:id="@+id/txtFpmMaxChildren"
+                android:layout_width="0dp" android:layout_height="34dp"
+                android:layout_weight="1" android:text="5"
+                android:textColor="#E6EDF3" android:textSize="11sp"
+                android:fontFamily="monospace" android:background="@drawable/input_bg"
+                android:inputType="number" android:paddingStart="8dp" android:singleLine="true"/>
+        </LinearLayout>
 
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="HOST" android:textSize="8sp" android:fontFamily="monospace"
-                            android:textColor="#7D8590"/>
-                        <EditText android:id="@+id/txtMysqlHost"
-                            android:layout_width="match_parent" android:layout_height="30dp"
-                            android:text="127.0.0.1" android:textColor="#E6EDF3"
-                            android:textSize="11sp" android:fontFamily="monospace"
-                            android:background="#21262D" android:paddingStart="6dp" android:singleLine="true"/>
-                    </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+                android:text="Socket Path:" android:textSize="11sp"
+                android:fontFamily="monospace" android:textColor="#7D8590"/>
+            <EditText android:id="@+id/txtFpmSocket"
+                android:layout_width="0dp" android:layout_height="34dp"
+                android:layout_weight="1"
+                android:hint="/data/.../tmp/php-fpm.sock"
+                android:textColor="#E6EDF3" android:textSize="10sp"
+                android:fontFamily="monospace" android:background="@drawable/input_bg"
+                android:paddingStart="8dp" android:singleLine="true"/>
+        </LinearLayout>
+    </LinearLayout>
 
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:orientation="vertical"
-                        android:layout_marginStart="8dp">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="PORT" android:textSize="8sp" android:fontFamily="monospace"
-                            android:textColor="#7D8590"/>
-                        <EditText android:id="@+id/txtMysqlPort"
-                            android:layout_width="match_parent" android:layout_height="30dp"
-                            android:text="3306" android:textColor="#E6EDF3"
-                            android:textSize="11sp" android:fontFamily="monospace"
-                            android:background="#21262D" android:inputType="number"
-                            android:paddingStart="6dp" android:singleLine="true"/>
-                    </LinearLayout>
-                </LinearLayout>
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="#21262D" android:layout_marginBottom="10dp"/>
 
-                <View android:layout_width="match_parent" android:layout_height="1dp"
-                    android:background="#21262D" android:layout_marginBottom="10dp"/>
+    <!-- PHP Settings label -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="PHP SETTINGS" android:textSize="9sp"
+        android:fontFamily="monospace" android:textColor="#58A6FF"
+        android:letterSpacing="0.1" android:layout_marginBottom="8dp"/>
 
-                <!-- phpMyAdmin -->
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="PHPMYADMIN" android:textSize="9sp"
-                    android:fontFamily="monospace" android:textColor="#58A6FF"
-                    android:letterSpacing="0.1" android:layout_marginBottom="8dp"/>
+    <!-- PHP Version -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="8dp"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+            android:text="PHP Version:" android:textSize="11sp"
+            android:fontFamily="monospace" android:textColor="#7D8590"/>
+        <Spinner android:id="@+id/spinnerPhpVersion"
+            android:layout_width="0dp" android:layout_height="34dp"
+            android:layout_weight="1" android:background="@drawable/spinner_bg"
+            android:paddingStart="8dp"/>
+    </LinearLayout>
 
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <TextView android:id="@+id/btnInstallPhpMyAdmin"
-                        android:layout_width="0dp" android:layout_height="36dp"
-                        android:layout_weight="1" android:text="Install"
-                        android:textSize="11sp" android:fontFamily="monospace"
-                        android:textColor="#FFFFFF" android:background="@drawable/button_state"
-                        android:gravity="center" android:clickable="true"
-                        android:focusable="true" android:layout_marginEnd="4dp"/>
-                    <TextView android:id="@+id/btnOpenPhpMyAdmin"
-                        android:layout_width="0dp" android:layout_height="36dp"
-                        android:layout_weight="1" android:text="Open ↗"
-                        android:textSize="11sp" android:fontFamily="monospace"
-                        android:textColor="#FFFFFF"     android:background="@drawable/button_state"
-                        android:gravity="center" android:clickable="true"
-                        android:focusable="true" android:layout_marginStart="4dp"/>
-                </LinearLayout>
-            </LinearLayout>
+    <!-- Memory Limit -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="8dp"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+            android:text="Memory Limit:" android:textSize="11sp"
+            android:fontFamily="monospace" android:textColor="#7D8590"/>
+        <EditText android:id="@+id/txtMemoryLimit"
+            android:layout_width="0dp" android:layout_height="34dp"
+            android:layout_weight="1" android:text="128M"
+            android:textColor="#E6EDF3" android:textSize="11sp"
+            android:fontFamily="monospace" android:background="@drawable/input_bg"
+            android:paddingStart="8dp" android:singleLine="true"/>
+    </LinearLayout>
 
-            <!-- ─────────────────────────────────────────
-                 SECTION: FTP SERVER
-            ───────────────────────────────────────── -->
-            <LinearLayout
-                android:id="@+id/headerFtp"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:orientation="horizontal"
-                android:background="#21262D"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:gravity="center_vertical"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginBottom="1dp"
-                android:layout_marginTop="6dp"
-                android:visibility="gone"
-                >
+    <!-- Exec Timeout -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="8dp"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+            android:text="Exec Timeout:" android:textSize="11sp"
+            android:fontFamily="monospace" android:textColor="#7D8590"/>
+        <EditText android:id="@+id/txtMaxExecTime"
+            android:layout_width="0dp" android:layout_height="34dp"
+            android:layout_weight="1" android:text="30"
+            android:textColor="#E6EDF3" android:textSize="11sp"
+            android:fontFamily="monospace" android:background="@drawable/input_bg"
+            android:inputType="number" android:paddingStart="8dp" android:singleLine="true"/>
+        <TextView android:layout_width="26dp" android:layout_height="wrap_content"
+            android:text="sec" android:textSize="9sp" android:fontFamily="monospace"
+            android:textColor="#7D8590" android:layout_marginStart="4dp"/>
+    </LinearLayout>
 
-                <TextView android:layout_width="22dp" android:layout_height="wrap_content"
-                    android:text="📡" android:textSize="14sp" android:layout_marginEnd="8dp"/>
+    <!-- Upload Max -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="10dp"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+            android:text="Upload Max:" android:textSize="11sp"
+            android:fontFamily="monospace" android:textColor="#7D8590"/>
+        <EditText android:id="@+id/txtUploadMaxSize"
+            android:layout_width="0dp" android:layout_height="34dp"
+            android:layout_weight="1" android:text="64M"
+            android:textColor="#E6EDF3" android:textSize="11sp"
+            android:fontFamily="monospace" android:background="@drawable/input_bg"
+            android:paddingStart="8dp" android:singleLine="true"/>
+    </LinearLayout>
 
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:text="FTP SERVER"
-                    android:textStyle="bold" android:textSize="11sp"
-                    android:fontFamily="monospace" android:textColor="#E6EDF3"
-                    android:letterSpacing="0.08"/>
+    <!-- PHP Flags -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="4dp">
+        <CheckBox android:id="@+id/chkDisplayErrors"
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Display Errors"
+            android:textColor="#E6EDF3" android:textSize="11sp"
+            android:fontFamily="monospace" android:buttonTint="#58A6FF"/>
+        <CheckBox android:id="@+id/chkAllowUrlFopen"
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="URL fopen"
+            android:textColor="#E6EDF3" android:textSize="11sp"
+            android:fontFamily="monospace" android:buttonTint="#58A6FF"/>
+    </LinearLayout>
 
-                <TextView android:id="@+id/txtFtpCollapseIcon"
-                    android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="▶" android:textSize="11sp" android:textColor="#7D8590"/>
-            </LinearLayout>
+    <CheckBox android:id="@+id/chkOpcache"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Enable OPcache"
+        android:textColor="#E6EDF3" android:textSize="11sp"
+        android:fontFamily="monospace" android:buttonTint="#58A6FF"
+        android:layout_marginBottom="10dp"/>
 
-            <LinearLayout
-                android:id="@+id/ftpContent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#161B22"
-                android:padding="14dp"
-                android:layout_marginBottom="2dp"
-                android:visibility="gone">
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="#21262D" android:layout_marginBottom="10dp"/>
 
-                <!-- FTP status + controls -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:layout_marginBottom="10dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:text="FTP Daemon"
-                        android:textSize="12sp" android:fontFamily="monospace"
-                        android:textColor="#E6EDF3" android:textStyle="bold"/>
-                    <TextView android:id="@+id/txtFtpStatus"
-                        android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text="● STOPPED" android:textColor="#F85149"
-                        android:textSize="9sp" android:fontFamily="monospace" android:textStyle="bold"/>
-                </LinearLayout>
+    <!-- HTTP Server Settings label -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="HTTP SERVER SETTINGS" android:textSize="9sp"
+        android:fontFamily="monospace" android:textColor="#58A6FF"
+        android:letterSpacing="0.1" android:layout_marginBottom="8dp"/>
 
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="12dp">
+    <!-- Apache Port -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="8dp"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+            android:text="Apache Port:" android:textSize="11sp"
+            android:fontFamily="monospace" android:textColor="#7D8590"/>
+        <EditText android:id="@+id/txtPort"
+            android:layout_width="0dp" android:layout_height="34dp"
+            android:layout_weight="1" android:text="8080"
+            android:textColor="#E6EDF3" android:textSize="11sp"
+            android:fontFamily="monospace" android:background="@drawable/input_bg"
+            android:inputType="number" android:paddingStart="8dp" android:singleLine="true"/>
+    </LinearLayout>
 
-<TextView android:id="@+id/btnStartFtp"
-    android:layout_width="0dp" android:layout_height="36dp"
-    android:layout_weight="1" android:text="▶ Start FTP"
-    android:textSize="11sp" android:fontFamily="monospace"
-    android:textColor="#FFFFFF" android:background="@drawable/button_success"
-    android:gravity="center" android:clickable="true"
-    android:focusable="true" android:layout_marginEnd="4dp"/>
+    <!-- Document Root -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="8dp"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+            android:text="Doc Root:" android:textSize="11sp"
+            android:fontFamily="monospace" android:textColor="#7D8590"/>
+        <EditText android:id="@+id/txtDocumentRoot"
+            android:layout_width="0dp" android:layout_height="34dp"
+            android:layout_weight="1"
+            android:text="/data/data/com.lodwickmasete.php/files/www"
+            android:textColor="#3FB950" android:textSize="10sp"
+            android:fontFamily="monospace" android:background="@drawable/input_bg"
+            android:paddingStart="8dp" android:singleLine="true"/>
+        <TextView android:id="@+id/btnSelectDocRoot"
+            android:layout_width="60dp" android:layout_height="34dp"
+            android:text="Browse" android:textSize="9sp"
+            android:fontFamily="monospace" android:textColor="#58A6FF"
+            android:background="@drawable/button_small_bg"
+            android:gravity="center"
+            android:clickable="true" android:focusable="true"
+            android:layout_marginStart="4dp"/>
+    </LinearLayout>
+
+    <!-- httpd.conf -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="8dp"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+            android:text="httpd.conf:" android:textSize="11sp"
+            android:fontFamily="monospace" android:textColor="#7D8590"/>
+        <EditText android:id="@+id/txtHttpdConf"
+            android:layout_width="0dp" android:layout_height="34dp"
+            android:layout_weight="1"
+            android:text="/data/data/com.lodwickmasete.php/files/Apache/apache2/httpd.conf"
+            android:textColor="#3FB950" android:textSize="9sp"
+            android:fontFamily="monospace" android:background="@drawable/input_bg"
+            android:paddingStart="8dp" android:singleLine="true"/>
+        <TextView android:id="@+id/btnSelectHttpdConf"
+            android:layout_width="60dp" android:layout_height="34dp"
+            android:text="Browse" android:textSize="9sp"
+            android:fontFamily="monospace" android:textColor="#58A6FF"
+            android:background="@drawable/button_small_bg"
+            android:gravity="center"
+            android:clickable="true" android:focusable="true"
+            android:layout_marginStart="4dp"/>
+    </LinearLayout>
+
+    <!-- Error Log -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:layout_width="110dp" android:layout_height="wrap_content"
+            android:text="Error Log:" android:textSize="11sp"
+            android:fontFamily="monospace" android:textColor="#7D8590"/>
+        <EditText android:id="@+id/txtErrorLog"
+            android:layout_width="0dp" android:layout_height="34dp"
+            android:layout_weight="1"
+            android:text="/data/data/com.lodwickmasete.php/files/logs/apache2/error.log"
+            android:textColor="#3FB950" android:textSize="9sp"
+            android:fontFamily="monospace" android:background="@drawable/input_bg"
+            android:paddingStart="8dp" android:singleLine="true"/>
+    </LinearLayout>
+
+</LinearLayout>
+
+<!-- ─────────────────────────────────────────
+     SECTION: DATABASE
+───────────────────────────────────────── -->
+<LinearLayout
+    android:id="@+id/headerDatabase"
+    android:layout_width="match_parent"
+    android:layout_height="44dp"
+    android:orientation="horizontal"
+    android:background="@drawable/section_header_bg"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:focusable="true"
+    android:layout_marginBottom="1dp"
+    android:layout_marginTop="6dp"
+    android:elevation="2dp"
+    android:visibility="gone">
+
+    <TextView android:layout_width="22dp" android:layout_height="wrap_content"
+        android:text="🗄" android:textSize="14sp" android:layout_marginEnd="8dp"/>
+
+    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" android:text="DATABASE &amp; phpMyAdmin"
+        android:textStyle="bold" android:textSize="11sp"
+        android:fontFamily="monospace" android:textColor="#E6EDF3"
+        android:letterSpacing="0.08"/>
+
+    <TextView android:id="@+id/txtDatabaseCollapseIcon"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="▶" android:textSize="11sp" android:textColor="#7D8590"/>
+</LinearLayout>
+
+<LinearLayout
+    android:id="@+id/databaseContent"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/section_content_bg"
+    android:padding="14dp"
+    android:layout_marginBottom="2dp"
+    android:visibility="visible">
+
+    <!-- MySQL status -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="10dp">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="MySQL / MariaDB"
+            android:textSize="12sp" android:fontFamily="monospace"
+            android:textColor="#E6EDF3" android:textStyle="bold"/>
+        <TextView android:id="@+id/txtMysqlStatus"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="● OFFLINE" android:textColor="#F85149"
+            android:textSize="9sp" android:fontFamily="monospace" android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- DB controls -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="12dp">
+        <TextView android:id="@+id/btnStartMySQL"
+            android:layout_width="0dp" android:layout_height="36dp"
+            android:layout_weight="1" android:text="▶ Start MySQL"
+            android:textSize="11sp" android:fontFamily="monospace"
+            android:textColor="#FFFFFF" android:background="@drawable/button_success"
+            android:gravity="center" android:clickable="true"
+            android:focusable="true" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/btnStopMySQL"
+            android:layout_width="0dp" android:layout_height="36dp"
+            android:layout_weight="1" android:text="■ Stop MySQL"
+            android:textSize="11sp" android:fontFamily="monospace"
+            android:textColor="#FFFFFF" android:background="@drawable/button_danger"
+            android:gravity="center" android:clickable="true"
+            android:focusable="true" android:layout_marginStart="4dp"/>
+    </LinearLayout>
+
+    <!-- MySQL conn info -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:background="@drawable/fpm_settings_bg"
+        android:padding="10dp" android:layout_marginBottom="12dp">
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="HOST" android:textSize="8sp" android:fontFamily="monospace"
+                android:textColor="#7D8590"/>
+            <EditText android:id="@+id/txtMysqlHost"
+                android:layout_width="match_parent" android:layout_height="30dp"
+                android:text="127.0.0.1" android:textColor="#E6EDF3"
+                android:textSize="11sp" android:fontFamily="monospace"
+                android:background="@drawable/input_bg" android:paddingStart="6dp" android:singleLine="true"/>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical"
+            android:layout_marginStart="8dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="PORT" android:textSize="8sp" android:fontFamily="monospace"
+                android:textColor="#7D8590"/>
+            <EditText android:id="@+id/txtMysqlPort"
+                android:layout_width="match_parent" android:layout_height="30dp"
+                android:text="3306" android:textColor="#E6EDF3"
+                android:textSize="11sp" android:fontFamily="monospace"
+                android:background="@drawable/input_bg" android:inputType="number"
+                android:paddingStart="6dp" android:singleLine="true"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="#21262D" android:layout_marginBottom="10dp"/>
+
+    <!-- phpMyAdmin -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="PHPMYADMIN" android:textSize="9sp"
+        android:fontFamily="monospace" android:textColor="#58A6FF"
+        android:letterSpacing="0.1" android:layout_marginBottom="8dp"/>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView android:id="@+id/btnInstallPhpMyAdmin"
+            android:layout_width="0dp" android:layout_height="36dp"
+            android:layout_weight="1" android:text="Install"
+            android:textSize="11sp" android:fontFamily="monospace"
+            android:textColor="#FFFFFF" android:background="@drawable/button_small_bg"
+            android:gravity="center" android:clickable="true"
+            android:focusable="true" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/btnOpenPhpMyAdmin"
+            android:layout_width="0dp" android:layout_height="36dp"
+            android:layout_weight="1" android:text="Open ↗"
+            android:textSize="11sp" android:fontFamily="monospace"
+            android:textColor="#FFFFFF" android:background="@drawable/button_small_bg"
+            android:gravity="center" android:clickable="true"
+            android:focusable="true" android:layout_marginStart="4dp"/>
+    </LinearLayout>
+</LinearLayout>
 
 
-<TextView android:id="@+id/btnStopFtp"
-    android:layout_width="0dp" android:layout_height="36dp"
-    android:layout_weight="1" android:text="■ Stop FTP"
-    android:textSize="11sp" android:fontFamily="monospace"
-    android:textColor="#FFFFFF" android:background="@drawable/button_danger"
-    android:gravity="center" android:clickable="true"
-    android:focusable="true" android:layout_marginStart="4dp"/>
-                </LinearLayout>
+<!-- ─────────────────────────────────────────
+     SECTION: FTP SERVER
+───────────────────────────────────────── -->
+<LinearLayout
+    android:id="@+id/headerFtp"
+    android:layout_width="match_parent"
+    android:layout_height="44dp"
+    android:orientation="horizontal"
+    android:background="@drawable/section_header_bg"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:focusable="true"
+    android:layout_marginBottom="1dp"
+    android:layout_marginTop="6dp"
+    android:elevation="2dp"
+    android:visibility="gone"
+    >
 
-                <!-- FTP Settings -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical">
-                    <TextView android:layout_width="80dp" android:layout_height="wrap_content"
-                        android:text="FTP Port:" android:textSize="11sp"
-                        android:fontFamily="monospace" android:textColor="#7D8590"/>
-                    <EditText android:id="@+id/txtFtpPort"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1" android:text="2121"
-                        android:textColor="#E6EDF3" android:textSize="11sp"
-                        android:fontFamily="monospace" android:background="#21262D"
-                        android:inputType="number" android:paddingStart="8dp" android:singleLine="true"/>
-                </LinearLayout>
+    <TextView android:layout_width="22dp" android:layout_height="wrap_content"
+        android:text="📡" android:textSize="14sp" android:layout_marginEnd="8dp"/>
 
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical">
-                    <TextView android:layout_width="80dp" android:layout_height="wrap_content"
-                        android:text="Root Dir:" android:textSize="11sp"
-                        android:fontFamily="monospace" android:textColor="#7D8590"/>
-                    <EditText android:id="@+id/txtFtpRoot"
-                        android:layout_width="0dp" android:layout_height="34dp"
-                        android:layout_weight="1"
-                        android:text="/data/data/com.lodwickmasete.php/files/www"
-                        android:textColor="#3FB950" android:textSize="10sp"
-                        android:fontFamily="monospace" android:background="#21262D"
-                        android:paddingStart="8dp" android:singleLine="true"/>
-                </LinearLayout>
+    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" android:text="FTP SERVER"
+        android:textStyle="bold" android:textSize="11sp"
+        android:fontFamily="monospace" android:textColor="#E6EDF3"
+        android:letterSpacing="0.08"/>
 
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="8dp">
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:orientation="vertical" android:layout_marginEnd="6dp">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="USERNAME" android:textSize="8sp"
-                            android:fontFamily="monospace" android:textColor="#7D8590"/>
-                        <EditText android:id="@+id/txtFtpUser"
-                            android:layout_width="match_parent" android:layout_height="34dp"
-                            android:text="admin" android:textColor="#E6EDF3"
-                            android:textSize="11sp" android:fontFamily="monospace"
-                            android:background="#21262D" android:paddingStart="8dp" android:singleLine="true"/>
-                    </LinearLayout>
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="PASSWORD" android:textSize="8sp"
-                            android:fontFamily="monospace" android:textColor="#7D8590"/>
-                        <EditText android:id="@+id/txtFtpPass"
-                            android:layout_width="match_parent" android:layout_height="34dp"
-                            android:text="admin" android:textColor="#E6EDF3"
-                            android:textSize="11sp" android:fontFamily="monospace"
-                            android:background="#21262D" android:inputType="textPassword"
-                            android:paddingStart="8dp" android:singleLine="true"/>
-                    </LinearLayout>
-                </LinearLayout>
+    <TextView android:id="@+id/txtFtpCollapseIcon"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="▶" android:textSize="11sp" android:textColor="#7D8590"/>
+</LinearLayout>
 
-                <CheckBox android:id="@+id/chkFtpAnonymous"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Allow Anonymous Login"
-                    android:textColor="#E6EDF3" android:textSize="11sp"
-                    android:fontFamily="monospace" android:buttonTint="#D29922"/>
+<LinearLayout
+    android:id="@+id/ftpContent"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/section_content_bg"
+    android:padding="14dp"
+    android:layout_marginBottom="2dp"
+    android:visibility="visible">
 
-            </LinearLayout>
+    <!-- FTP status + controls -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="10dp">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="FTP Daemon"
+            android:textSize="12sp" android:fontFamily="monospace"
+            android:textColor="#E6EDF3" android:textStyle="bold"/>
+        <TextView android:id="@+id/txtFtpStatus"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="● STOPPED" android:textColor="#F85149"
+            android:textSize="9sp" android:fontFamily="monospace" android:textStyle="bold"/>
+    </LinearLayout>
 
-            <!-- ─────────────────────────────────────────
-                 SECTION: ASSET MANAGEMENT
-            ───────────────────────────────────────── -->
-            <LinearLayout
-                android:id="@+id/headerAssets"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:orientation="horizontal"
-                android:background="#21262D"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:gravity="center_vertical"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginBottom="1dp"
-                android:layout_marginTop="6dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="12dp">
+        <TextView android:id="@+id/btnStartFtp"
+            android:layout_width="0dp" android:layout_height="36dp"
+            android:layout_weight="1" android:text="▶ Start FTP"
+            android:textSize="11sp" android:fontFamily="monospace"
+            android:textColor="#FFFFFF" android:background="@drawable/button_success"
+            android:gravity="center" android:clickable="true"
+            android:focusable="true" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/btnStopFtp"
+            android:layout_width="0dp" android:layout_height="36dp"
+            android:layout_weight="1" android:text="■ Stop FTP"
+            android:textSize="11sp" android:fontFamily="monospace"
+            android:textColor="#FFFFFF" android:background="@drawable/button_danger"
+            android:gravity="center" android:clickable="true"
+            android:focusable="true" android:layout_marginStart="4dp"/>
+    </LinearLayout>
 
-                <TextView android:layout_width="22dp" android:layout_height="wrap_content"
-                    android:text="📦" android:textSize="14sp" android:layout_marginEnd="8dp"/>
+    <!-- FTP Settings -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="8dp"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="80dp" android:layout_height="wrap_content"
+            android:text="FTP Port:" android:textSize="11sp"
+            android:fontFamily="monospace" android:textColor="#7D8590"/>
+        <EditText android:id="@+id/txtFtpPort"
+            android:layout_width="0dp" android:layout_height="34dp"
+            android:layout_weight="1" android:text="2121"
+            android:textColor="#E6EDF3" android:textSize="11sp"
+            android:fontFamily="monospace" android:background="@drawable/input_bg"
+            android:inputType="number" android:paddingStart="8dp" android:singleLine="true"/>
+    </LinearLayout>
 
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:text="ASSET MANAGEMENT"
-                    android:textStyle="bold" android:textSize="11sp"
-                    android:fontFamily="monospace" android:textColor="#E6EDF3"
-                    android:letterSpacing="0.08"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="8dp"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="80dp" android:layout_height="wrap_content"
+            android:text="Root Dir:" android:textSize="11sp"
+            android:fontFamily="monospace" android:textColor="#7D8590"/>
+        <EditText android:id="@+id/txtFtpRoot"
+            android:layout_width="0dp" android:layout_height="34dp"
+            android:layout_weight="1"
+            android:text="/data/data/com.lodwickmasete.php/files/www"
+            android:textColor="#3FB950" android:textSize="10sp"
+            android:fontFamily="monospace" android:background="@drawable/input_bg"
+            android:paddingStart="8dp" android:singleLine="true"/>
+    </LinearLayout>
 
-                <TextView android:id="@+id/txtAssetsCollapseIcon"
-                    android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="▶" android:textSize="11sp" android:textColor="#7D8590"/>
-            </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="8dp">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical" android:layout_marginEnd="6dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="USERNAME" android:textSize="8sp"
+                android:fontFamily="monospace" android:textColor="#7D8590"/>
+            <EditText android:id="@+id/txtFtpUser"
+                android:layout_width="match_parent" android:layout_height="34dp"
+                android:text="admin" android:textColor="#E6EDF3"
+                android:textSize="11sp" android:fontFamily="monospace"
+                android:background="@drawable/input_bg" android:paddingStart="8dp" android:singleLine="true"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="PASSWORD" android:textSize="8sp"
+                android:fontFamily="monospace" android:textColor="#7D8590"/>
+            <EditText android:id="@+id/txtFtpPass"
+                android:layout_width="match_parent" android:layout_height="34dp"
+                android:text="admin" android:textColor="#E6EDF3"
+                android:textSize="11sp" android:fontFamily="monospace"
+                android:background="@drawable/input_bg" android:inputType="textPassword"
+                android:paddingStart="8dp" android:singleLine="true"/>
+        </LinearLayout>
+    </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/assetsContent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#161B22"
-                android:padding="14dp"
-                android:layout_marginBottom="2dp"
-                android:visibility="gone">
+    <CheckBox android:id="@+id/chkFtpAnonymous"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Allow Anonymous Login"
+        android:textColor="#E6EDF3" android:textSize="11sp"
+        android:fontFamily="monospace" android:buttonTint="#D29922"/>
+</LinearLayout>
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="DOWNLOAD / EXTRACT" android:textSize="9sp"
-                    android:fontFamily="monospace" android:textColor="#58A6FF"
-                    android:letterSpacing="0.1" android:layout_marginBottom="8dp"/>
+<!-- ─────────────────────────────────────────
+     SECTION: ASSET MANAGEMENT
+───────────────────────────────────────── -->
+<LinearLayout
+    android:id="@+id/headerAssets"
+    android:layout_width="match_parent"
+    android:layout_height="44dp"
+    android:orientation="horizontal"
+    android:background="@drawable/section_header_bg"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:focusable="true"
+    android:layout_marginBottom="1dp"
+    android:layout_marginTop="6dp"
+    android:elevation="2dp"
 
-                <!-- Download row -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="6dp">
-<EditText android:id="@+id/txtZipUrl"
-    android:layout_width="0dp"
-    android:layout_height="34dp"
-    android:layout_weight="1"
-    android:hint="https://…/assets.zip"
-    android:text="https://github.com/Lodwickmasete/ampdroid/releases/download/v1.0/assets_debug.zip"
-    android:textColor="#E6EDF3"
-    android:textColorHint="#3D444D"
-    android:textSize="10sp"
-    android:fontFamily="monospace"
-    android:background="#21262D"
-    android:paddingStart="8dp"
-    android:singleLine="true"/>
-                    <TextView android:id="@+id/btnDownloadZip"
-                        android:layout_width="80dp" android:layout_height="34dp"
-                        android:text="⬇ DL" android:textSize="10sp"
-                        android:fontFamily="monospace" android:textColor="#FFFFFF"
-                        android:background="#1F6FEB" android:gravity="center"
-                        android:clickable="true" android:focusable="true"
-                        android:layout_marginStart="6dp"/>
-                </LinearLayout>
+    >
 
-                <!-- Extract row -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="8dp">
+    <TextView android:layout_width="22dp" android:layout_height="wrap_content"
+        android:text="📦" android:textSize="14sp" android:layout_marginEnd="8dp"/>
 
-                    <TextView android:id="@+id/btnExtractAssetsZip"
-                        android:layout_width="match_parent" android:layout_height="36dp"
-                        android:text="📂 Unzip" android:textSize="10sp"
-                        android:fontFamily="monospace" android:textColor="#FFFFFF"
-                        android:background="#9E6A03" android:gravity="center"
-                        android:clickable="true" android:focusable="true"
-                        />
-                </LinearLayout>
+    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" android:text="ASSET MANAGEMENT"
+        android:textStyle="bold" android:textSize="11sp"
+        android:fontFamily="monospace" android:textColor="#E6EDF3"
+        android:letterSpacing="0.08"/>
 
-                <!-- Progress -->
-                <ProgressBar android:id="@+id/progressDownload"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="match_parent" android:layout_height="6dp"
-                    android:progressTint="#1F6FEB" android:progress="0"
-                    android:visibility="gone" android:layout_marginBottom="8dp"/>
+    <TextView android:id="@+id/txtAssetsCollapseIcon"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="▶" android:textSize="11sp" android:textColor="#7D8590"/>
+</LinearLayout>
 
-                <!-- Copy from SD -->
-                <TextView android:id="@+id/btnCopyAssets"
-                    android:layout_width="match_parent" android:layout_height="36dp"
-                    android:text="→ Copy from /sdcard/assets/"
-                    android:textSize="11sp" android:fontFamily="monospace"
-                    android:textColor="#7D8590" android:background="#21262D"
-                    android:gravity="center" android:clickable="true" android:focusable="true"/>
+<LinearLayout
+    android:id="@+id/assetsContent"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/section_content_bg"
+    android:padding="14dp"
+    android:layout_marginBottom="2dp"
+    android:visibility="visible">
 
-            </LinearLayout>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="DOWNLOAD / EXTRACT" android:textSize="9sp"
+        android:fontFamily="monospace" android:textColor="#58A6FF"
+        android:letterSpacing="0.1" android:layout_marginBottom="8dp"/>
 
-            <!-- ─────────────────────────────────────────
-                 CONFIG ACTIONS
-            ───────────────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="10dp">
+    <!-- Download row -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="6dp">
+        <EditText android:id="@+id/txtZipUrl"
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_weight="1"
+            android:hint="https://…/assets.zip"
+            android:text="https://github.com/Lodwickmasete/ampdroid/releases/download/v1.0/assets_debug.zip"
+            android:textColor="#E6EDF3"
+            android:textColorHint="#3D444D"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:background="@drawable/input_bg"
+            android:paddingStart="8dp"
+            android:singleLine="true"/>
+        <TextView android:id="@+id/btnDownloadZip"
+            android:layout_width="80dp" android:layout_height="34dp"
+            android:text="⬇ DL" android:textSize="10sp"
+            android:fontFamily="monospace" android:textColor="#FFFFFF"
+            android:background="@drawable/button_small_bg"
+            android:gravity="center"
+            android:clickable="true" android:focusable="true"
+            android:layout_marginStart="6dp"/>
+    </LinearLayout>
 
-                <TextView android:id="@+id/btnSaveConfig"
-                    android:layout_width="0dp" android:layout_height="38dp"
-                    android:layout_weight="1" android:text="💾 Save Config"
-                    android:textSize="11sp" android:fontFamily="monospace"
-                    android:textColor="#E6EDF3" android:background="#21262D"
-                    android:gravity="center" android:clickable="true"
-                    android:focusable="true" android:layout_marginEnd="4dp"/>
+    <!-- Extract row -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="8dp">
+        <TextView android:id="@+id/btnExtractAssetsZip"
+            android:layout_width="match_parent" android:layout_height="36dp"
+            android:text="📂 Unzip" android:textSize="10sp"
+            android:fontFamily="monospace" android:textColor="#FFFFFF"
+            android:background="#9E6A03" android:gravity="center"
+            android:clickable="true" android:focusable="true"/>
+    </LinearLayout>
 
-                <TextView android:id="@+id/btnLoadConfig"
-                    android:layout_width="0dp" android:layout_height="38dp"
-                    android:layout_weight="1" android:text="📂 Load Config"
-                    android:textSize="11sp" android:fontFamily="monospace"
-                    android:textColor="#E6EDF3" android:background="#21262D"
-                    android:gravity="center" android:clickable="true"
-                    android:focusable="true" android:layout_marginStart="4dp"/>
-            </LinearLayout>
+    <!-- Progress -->
+    <ProgressBar android:id="@+id/progressDownload"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent" android:layout_height="6dp"
+        android:progressTint="#1F6FEB" android:progress="0"
+        android:visibility="gone" android:layout_marginBottom="8dp"/>
+
+    <!-- Copy from SD -->
+    <TextView android:id="@+id/btnCopyAssets"
+        android:layout_width="match_parent" android:layout_height="36dp"
+        android:text="→ Copy from /sdcard/assets/"
+        android:textSize="11sp" android:fontFamily="monospace"
+        android:textColor="#7D8590" android:background="@drawable/input_bg"
+        android:gravity="center" android:clickable="true" android:focusable="true"/>
+</LinearLayout>
+
+<!-- ─────────────────────────────────────────
+     CONFIG ACTIONS
+───────────────────────────────────────── -->
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:layout_marginTop="10dp"
+    android:layout_marginBottom="10dp">
+
+    <TextView android:id="@+id/btnSaveConfig"
+        android:layout_width="0dp" android:layout_height="38dp"
+        android:layout_weight="1" android:text="💾 Save Config"
+        android:textSize="11sp" android:fontFamily="monospace"
+        android:textColor="#E6EDF3" android:background="@drawable/input_bg"
+        android:gravity="center" android:clickable="true"
+        android:focusable="true" android:layout_marginEnd="4dp"/>
+
+    <TextView android:id="@+id/btnLoadConfig"
+        android:layout_width="0dp" android:layout_height="38dp"
+        android:layout_weight="1" android:text="📂 Load Config"
+        android:textSize="11sp" android:fontFamily="monospace"
+        android:textColor="#E6EDF3" android:background="@drawable/input_bg"
+        android:gravity="center" android:clickable="true"
+        android:focusable="true" android:layout_marginStart="4dp"/>
+</LinearLayout>
 
             <!-- ─────────────────────────────────────────
                  TERMINAL HEADER (toggle + actions)
@@ -1138,7 +1060,7 @@
                         android:textIsSelectable="true"
                         android:cursorVisible="true"
                         android:linksClickable="false"
-                        android:text="PHP Server Manager v3.0&#10;$ _"
+                  
                         android:paddingBottom="4dp"/>
                 </ScrollView>
 
@@ -1232,10 +1154,21 @@
             </LinearLayout>
             <!-- end terminal container -->
 
+
+
             <!-- bottom padding -->
             <View android:layout_width="match_parent" android:layout_height="16dp"/>
 
         </LinearLayout>
     </ScrollView>
+
+
+    <!-- ═══════════════════════════════
+         FIXED BOTTOM CONTROL BAR
+    ═══════════════════════════════ -->
+<include
+    android:id="@+id/includeBottomControls"
+    layout="@layout/layout_bottom_control_bar"/>
+
 
 </LinearLayout>
