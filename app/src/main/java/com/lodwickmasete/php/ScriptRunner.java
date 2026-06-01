@@ -71,7 +71,6 @@ public class ScriptRunner {
                     procEnv.put("LD_LIBRARY_PATH",
                             DATA_DIR + "/lib/common:" +
                             DATA_DIR + "/lib/httpd:" +
-                            DATA_DIR + "/lib/php:" +
                             DATA_DIR + "/lib/php-fpm:" +
                             DATA_DIR + "/lib/mysql");
 
