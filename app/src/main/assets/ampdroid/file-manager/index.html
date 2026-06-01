@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+  <title>Ampdroid File Manager</title>
+  <link rel="stylesheet" href="./css/vendor/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="app-header">
+  <div class="header-title">
+    <i class="fas fa-microchip app-icon"></i>
+    Ampdroid <span class="version">v1.0</span>
+  </div>
+  <div class="header-right">
+    <span class="header-user">
+      <i class="fas fa-user-shield"></i>
+      <span class="uname" id="header-username">admin</span>
+    </span>
+    <button class="btn-logout" onclick="doLogout()">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </button>
+  </div>
+</div>
+
+<div class="main-content">
+
+  <!-- ===== TOOLBAR (horizontally scrollable always) ===== -->
+  <div class="toolbar" id="main-toolbar">
+    <button id="btn-home"><i class="fas fa-home"></i> <span class="btn-label">Home</span></button>
+    <button id="btn-up"><i class="fas fa-arrow-up"></i> <span class="btn-label">Up</span></button>
+    <span class="sep"></span>
+    <button id="btn-upload"><i class="fas fa-upload"></i> <span class="btn-label">Upload</span></button>
+    <span class="sep"></span>
+    <button id="btn-newdir"><i class="fas fa-folder-plus"></i> <span class="btn-label">New Folder</span></button>
+    <button id="btn-newfile"><i class="fas fa-file"></i> <span class="btn-label">New File</span></button>
+    <span class="sep"></span>
+    <button id="btn-del" disabled><i class="fas fa-trash-alt"></i> <span class="btn-label">Delete</span></button>
+    <button id="btn-rename" disabled><i class="fas fa-i-cursor"></i> <span class="btn-label">Rename</span></button>
+    <span class="sep"></span>
+    <button id="btn-copy" disabled><i class="fas fa-copy"></i> <span class="btn-label">Copy</span></button>
+    <button id="btn-cut" disabled><i class="fas fa-cut"></i> <span class="btn-label">Cut</span></button>
+    <button id="btn-paste" disabled><i class="fas fa-paste"></i> <span class="btn-label">Paste</span></button>
+    <span class="sep"></span>
+    <button id="btn-select-all"><i class="fas fa-check-double"></i> <span class="btn-label">Select All</span></button>
+    <button id="btn-clear-sel"><i class="fas fa-eraser"></i> <span class="btn-label">Clear</span></button>
+    <span class="sep"></span>
+    <!-- ZIP dropdown: rendered via JS to position correctly -->
+    <div class="zip-dropdown" id="zip-dropdown-wrap">
+      <button id="btn-zip-trigger"><i class="fas fa-file-archive"></i> <span class="btn-label">ZIP</span> <i class="fas fa-caret-down"></i></button>
+      <div id="zip-menu" class="zip-menu">
+        <button id="export-zip"><i class="fas fa-download"></i> Export ZIP</button>
+        <button id="import-zip"><i class="fas fa-upload"></i> Import / Extract</button>
+        <button id="zip-selected"><i class="fas fa-compress-alt"></i> ZIP Selected</button>
+      </div>
+    </div>
+    <span class="sep"></span>
+    <button id="btn-hidden-toggle" title="Toggle hidden files"><i class="fas fa-eye-slash"></i> <span class="btn-label">Hidden</span></button>
+    <button id="btn-disk-usage"><i class="fas fa-hdd"></i> <span class="btn-label">Usage</span></button>
+    <button id="btn-refresh"><i class="fas fa-sync-alt"></i> <span class="btn-label">Refresh</span></button>
+  </div>
+
+  <!-- ===== FEEDBACK BAR ===== -->
+  <div id="feedback-bar" class="feedback-bar info" style="display: none;">
+    <i class="fas fa-info-circle" id="feedback-icon"></i>
+    <span class="msg-text" id="feedback-msg">Ready</span>
+  </div>
+
+  <!-- ===== ADDRESS BAR ===== -->
+  <div class="addrbar">
+    <label>Address:</label>
+    <input id="path-input" type="text" value="/">
+    <button id="web-url"><i class="fas fa-globe"></i></button>   
+    <button id="path-btn">Go</button>
+    <div class="addrbar-progress" id="addrbar-progress"></div>
+  </div>
+
+  <!-- ===== BREADCRUMB ===== -->
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+<!-- ===== FILE TABLE ===== -->
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th class="col-icon">
+          <input type="checkbox" id="chk-all" title="Select all" style="cursor:pointer;">
+        </th>
+        <th class="col-name" data-col="name">Name <span class="sort-arrow" id="sarr-name">▲</span></th>
+        <th class="col-type" data-col="type">Type <span class="sort-arrow" id="sarr-type"></span></th>
+        <th class="col-size" data-col="size">Size <span class="sort-arrow" id="sarr-size"></span></th>
+        <th class="col-menu"></th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="5" style="padding:16px; color:#888; text-align:center;"><i class="fas fa-circle-notch fa-spin"></i> Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+  <!-- ===== STATUS BAR ===== -->
+  <div class="statusbar">
+    <span id="st-count"></span>
+    <span id="st-sel"></span>
+    <span id="st-clip"></span>
+    <span id="st-disk"></span>
+  </div>
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<div class="bottom-nav">
+  <button id="nav-home"><i class="fas fa-home"></i> <span>Home</span></button>
+  <button id="nav-up"><i class="fas fa-level-up-alt"></i> <span>Up</span></button>
+  <button id="nav-select-all"><i class="fas fa-check-square"></i> <span>Select All</span></button>
+  <button id="nav-new-folder"><i class="fas fa-folder-plus"></i> <span>New Folder</span></button>
+  <button id="nav-upload"><i class="fas fa-upload"></i> <span>Upload</span></button>
+</div>
+
+<!-- ===== CONTEXT MENU: FILE/FOLDER ===== -->
+<div class="contextmenu" id="ctx-files">
+  <ul>
+    <li><button id="btn-modal-copy"><i class="fas fa-copy"></i> Copy</button></li>
+    <li><button id="btn-modal-cut"><i class="fas fa-cut"></i> Cut</button></li>
+    <li class="cmsep"></li>
+    <li><button id="btn-modal-rename"><i class="fas fa-pen"></i> Rename</button></li>
+    <li class="cmsep"></li>
+    <li><button id="btn-modal-del"><i class="fas fa-trash-alt"></i> Delete</button></li>
+    <li class="cmsep"></li>
+    <li><button id="btn-ctx-zip-folder"><i class="fas fa-file-archive"></i> Create ZIP</button></li>
+    <!-- ZIP-specific items, shown only for .zip files -->
+    <li id="ctx-zip-section" style="display:none;">
+      <div class="cmsep"></div>
+    </li>
+    <li id="ctx-extract-here-li" style="display:none;">
+      <button id="btn-ctx-extract-here"><i class="fas fa-box-open"></i> Extract Here</button>
+    </li>
+    <li id="ctx-extract-to-li" style="display:none;">
+      <button id="btn-ctx-extract-to"><i class="fas fa-folder-open"></i> Extract to...</button>
+    </li>
+    <li class="cmsep"></li>
+    <li><button id="btn-ctx-properties"><i class="fas fa-info-circle"></i> Properties</button></li>
+  </ul>
+</div>
+
+<!-- ===== CONTEXT MENU: BLANK AREA ===== -->
+<div class="contextmenu" id="ctx-dir">
+  <ul>
+    <li><button id="btn-modal-mkdir"><i class="fas fa-folder-plus"></i> New Folder</button></li>
+    <li><button id="btn-modal-mkfile"><i class="fas fa-file-plus"></i> New File</button></li>
+    <li class="cmsep"></li>
+    <li><button id="btn-modal-paste" disabled><i class="fas fa-paste"></i> Paste</button></li>
+    <li class="cmsep"></li>
+    <li><button id="btn-import-zip-here"><i class="fas fa-upload"></i> Extract ZIP here</button></li>
+  </ul>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Generic prompt modal -->
+<div class="modal-overlay" id="modal-prompt">
+  <div class="modal-box">
+    <div class="modal-title"><i class="fas fa-keyboard"></i> <span id="modal-prompt-title">Input</span></div>
+    <div class="modal-body">
+      <p id="modal-prompt-msg"></p>
+      <input type="text" id="modal-prompt-input" autocomplete="off">
+    </div>
+    <div class="modal-footer">
+      <button id="modal-prompt-cancel"><i class="fas fa-times"></i> Cancel</button>
+      <button class="primary" id="modal-prompt-ok"><i class="fas fa-check"></i> OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal-box">
+    <div class="modal-title"><i class="fas fa-exclamation-triangle"></i> <span id="modal-confirm-title">Confirm</span></div>
+    <div class="modal-body">
+      <p id="modal-confirm-msg"></p>
+    </div>
+    <div class="modal-footer">
+      <button id="modal-confirm-cancel"><i class="fas fa-times"></i> Cancel</button>
+      <button class="primary danger" id="modal-confirm-ok"><i class="fas fa-check"></i> OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upload modal -->
+<div class="modal-overlay" id="modal-upload">
+  <div class="modal-box" style="min-width:320px;">
+    <div class="modal-title"><i class="fas fa-upload"></i> Upload Files</div>
+    <div class="modal-body">
+      <p>Select files to upload to: <b id="upload-dest-path">/</b></p>
+      <input type="file" id="upload-file-input" multiple>
+      <div class="upload-list" id="upload-preview" style="display:none;"></div>
+      <div class="progress-bar-container" id="upload-progress-wrap" style="margin-top:8px;">
+        <div class="progress-fill" id="upload-progress-fill">0%</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="upload-cancel-btn"><i class="fas fa-times"></i> Cancel</button>
+      <button class="primary" id="upload-confirm-btn" disabled><i class="fas fa-cloud-upload-alt"></i> Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- Properties modal -->
+<div class="modal-overlay" id="modal-properties">
+  <div class="modal-box" style="min-width:300px;">
+    <div class="modal-title"><i class="fas fa-info-circle"></i> Properties</div>
+    <div class="modal-body">
+      <table class="prop-table" id="prop-table"></table>
+    </div>
+    <div class="modal-footer">
+      <button id="prop-close-btn"><i class="fas fa-times"></i> Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Extract To modal -->
+<div class="modal-overlay" id="modal-extract-to">
+  <div class="modal-box" style="min-width:300px;">
+    <div class="modal-title"><i class="fas fa-folder-open"></i> Extract to...</div>
+    <div class="modal-body">
+      <p>Select destination folder:</p>
+      <div class="folder-picker" id="folder-picker"></div>
+    </div>
+    <div class="modal-footer">
+      <button id="extract-to-cancel"><i class="fas fa-times"></i> Cancel</button>
+      <button class="primary" id="extract-to-ok"><i class="fas fa-box-open"></i> Extract Here</button>
+    </div>
+  </div>
+</div>
+<script src="./js/script.js"></script>
+</body>
+</html>
