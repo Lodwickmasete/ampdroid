@@ -11,249 +11,458 @@ import android.database.Cursor;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.*;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class EditorActivity extends Activity {
-    
-    private EditText editText;
-    private TextView fileInfo;
+
+    // ── Views ────────────────────────────────────────────────────────────────
+    private EditText  editText;
+    private EditText  searchEditText;
+    private TextView  fileInfo;
     private ProgressBar progressBar;
-    private String currentFilePath;
-    private File currentFile;
-    private boolean isModified = false;
-    private Handler autoSaveHandler = new Handler();
-    private Runnable autoSaveRunnable;
-    private ListView fileListView;
+    private ListView  fileListView;
+    private WebView   webView;
+
     private LinearLayout fileBrowserLayout;
     private LinearLayout editorLayout;
     private LinearLayout webViewLayout;
-    private String currentDirectoryPath;
-    private ArrayAdapter<String> fileListAdapter;
-    private ArrayList<String> fileListItems;
-    private ArrayList<String> fileListPaths;
-    private Button btnNewFile, btnSave, btnUndo, btnRedo;
-    private EditText searchEditText;
-    private int lastSearchIndex = -1;
-    private String lastSearchQuery = "";
-    private Button btnSearchNext, btnSearchPrev;
-    private WebView webView;
-    private boolean isWebViewVisible = false;
     private LinearLayout bottomBar;
+
+    private Button      btnNewFile;
+    private Button      btnSave;
+    private Button      btnUndo;
+    private Button      btnRedo;
+    private Button      btnSearchNext;
+    private Button      btnSearchPrev;
     private ImageButton btnPlayPreview;
-    private static final int REQUEST_IMPORT_FILES = 100;
-    
+
+    // ── State ────────────────────────────────────────────────────────────────
+    private File    currentFile;
+    private String  currentFilePath;
+    private String  currentDirectoryPath;
+    private boolean isModified      = false;
+    private boolean isWebViewVisible = false;
+
+    // ── Search ───────────────────────────────────────────────────────────────
+    private int    lastSearchIndex = -1;
+    private String lastSearchQuery = "";
+
+    // ── File list ────────────────────────────────────────────────────────────
+    private ArrayList<String>    fileListItems;
+    private ArrayList<String>    fileListPaths;
+    private ArrayAdapter<String> fileListAdapter;
+
+    // ── Auto-save ────────────────────────────────────────────────────────────
+    private final Handler  autoSaveHandler  = new Handler();
+    private final Runnable autoSaveRunnable = new Runnable() {
+        @Override public void run() {
+            if (isModified && currentFile != null) {
+                saveFile();
+                toast("Auto-saved");
+            }
+        }
+    };
+
+    // ── Undo stack ───────────────────────────────────────────────────────────
+    private final Deque<String> undoStack = new ArrayDeque<String>();
+    private final Deque<String> redoStack = new ArrayDeque<String>();
+    private boolean isUndoRedoAction = false;
+
+    private static final int MAX_STACK   = 50;
+    private static final int REQUEST_IMPORT = 100;
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  Lifecycle
+    // ────────────────────────────────────────────────────────────────────────
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.editor);
-        
-        initializeViews();
+        bindViews();
         setupFileBrowser();
         setupEditor();
-        setupAutoSave();
         setupWebView();
-        
-        String filePath = getIntent().getStringExtra("file_path");
-        if (filePath != null && new File(filePath).exists()) {
-            openFile(filePath);
+
+        String path = getIntent().getStringExtra("file_path");
+        if (path != null && new File(path).exists()) {
+            openFile(path);
         } else {
             showFileBrowser();
             browseDirectory(getFilesDir().getAbsolutePath());
         }
     }
-    
-    private void initializeViews() {
-        editText = findViewById(R.id.editText);
-        fileInfo = findViewById(R.id.fileInfo);
-        progressBar = findViewById(R.id.progressBar);
-        fileListView = findViewById(R.id.fileListView);
-        fileBrowserLayout = findViewById(R.id.fileBrowserLayout);
-        editorLayout = findViewById(R.id.editorLayout);
-        webViewLayout = findViewById(R.id.webViewLayout);
-        btnNewFile = findViewById(R.id.btnNewFile);
-        btnSave = findViewById(R.id.btnSave);
-        btnUndo = findViewById(R.id.btnUndo);
-        btnRedo = findViewById(R.id.btnRedo);
-        searchEditText = findViewById(R.id.searchEditText);
-        btnSearchNext = findViewById(R.id.btnSearchNext);
-        btnSearchPrev = findViewById(R.id.btnSearchPrev);
-        webView = findViewById(R.id.webView);
-        bottomBar = findViewById(R.id.bottomBar);
-        btnPlayPreview = findViewById(R.id.btnPlayPreview);
-        
-        editText.setMovementMethod(new ScrollingMovementMethod());
-        editText.setTextSize(14);
-        editText.setTextIsSelectable(true);
-        editText.setTypeface(Typeface.MONOSPACE);
-        
-        progressBar.setVisibility(View.GONE);
-        
-        btnPlayPreview.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                toggleWebView();
-            }
-        });
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        autoSaveHandler.removeCallbacks(autoSaveRunnable);
     }
-    
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  View binding
+    // ────────────────────────────────────────────────────────────────────────
+
+    private void bindViews() {
+        editText          = (EditText)     findViewById(R.id.editText);
+        searchEditText    = (EditText)     findViewById(R.id.searchEditText);
+        fileInfo          = (TextView)     findViewById(R.id.fileInfo);
+        progressBar       = (ProgressBar)  findViewById(R.id.progressBar);
+        fileListView      = (ListView)     findViewById(R.id.fileListView);
+        webView           = (WebView)      findViewById(R.id.webView);
+        fileBrowserLayout = (LinearLayout) findViewById(R.id.fileBrowserLayout);
+        editorLayout      = (LinearLayout) findViewById(R.id.editorLayout);
+        webViewLayout     = (LinearLayout) findViewById(R.id.webViewLayout);
+        bottomBar         = (LinearLayout) findViewById(R.id.bottomBar);
+        btnNewFile        = (Button)       findViewById(R.id.btnNewFile);
+        btnSave           = (Button)       findViewById(R.id.btnSave);
+        btnUndo           = (Button)       findViewById(R.id.btnUndo);
+        btnRedo           = (Button)       findViewById(R.id.btnRedo);
+        btnSearchNext     = (Button)       findViewById(R.id.btnSearchNext);
+        btnSearchPrev     = (Button)       findViewById(R.id.btnSearchPrev);
+        btnPlayPreview    = (ImageButton)  findViewById(R.id.btnPlayPreview);
+
+        editText.setTypeface(Typeface.MONOSPACE);
+        editText.setTextSize(12);
+        progressBar.setVisibility(View.GONE);
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  File browser
+    // ────────────────────────────────────────────────────────────────────────
+
     private void setupFileBrowser() {
         fileListItems = new ArrayList<String>();
         fileListPaths = new ArrayList<String>();
-        
-        fileListAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, fileListItems) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                TextView textView = (TextView) view;
-                String path = fileListPaths.get(position);
-                File file = new File(path);
-                
-                if (file.isDirectory()) {
-                    textView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_save, 0, 0, 0);
-                } else {
-                    String fileName = file.getName().toLowerCase();
-                    if (fileName.endsWith(".html") || fileName.endsWith(".htm")) {
-                        textView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_gallery, 0, 0, 0);
-                    } else if (fileName.endsWith(".php")) {
-                        textView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_edit, 0, 0, 0);
-                    } else if (fileName.endsWith(".txt")) {
-                        textView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_info_details, 0, 0, 0);
-                    } else {
-                        textView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_edit, 0, 0, 0);
-                    }
-                }
-                textView.setCompoundDrawablePadding(10);
-                return view;
-            }
-        };
+
+
+fileListAdapter = new ArrayAdapter<String>(
+        this, R.layout.item_file, R.id.fileName, fileListItems) {
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        if (convertView == null) {
+            convertView = getLayoutInflater().inflate(R.layout.item_file, parent, false);
+        }
+
+        ImageView icon     = (ImageView) convertView.findViewById(R.id.fileIcon);
+        TextView  name     = (TextView)  convertView.findViewById(R.id.fileName);
+        TextView  meta     = (TextView)  convertView.findViewById(R.id.fileMeta);
+
+        String path = fileListPaths.get(position);
+        File   f    = new File(path);
+
+        name.setText(fileListItems.get(position));
+
+        if (f.isDirectory()) {
+            icon.setImageResource(R.drawable.ic_folder);
+            meta.setText("");
+        } else {
+            String n = f.getName().toLowerCase();
+            if      (n.endsWith(".html") || n.endsWith(".htm")) icon.setImageResource(R.drawable.ic_web);
+            else if (n.endsWith(".php"))                        icon.setImageResource(R.drawable.ic_php);
+            else                                                icon.setImageResource(R.drawable.ic_menu);
+            meta.setText(formatSize(f.length()));
+        }
+
+        return convertView;
+    }
+};
+
         fileListView.setAdapter(fileListAdapter);
-        
+
         fileListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String path = fileListPaths.get(position);
-                File file = new File(path);
-                
-                if (file.isDirectory()) {
-                    browseDirectory(path);
-                } else {
-                    openFile(path);
-                }
+            public void onItemClick(AdapterView<?> p, View v, int pos, long id) {
+                File f = new File(fileListPaths.get(pos));
+                if (f.isDirectory()) browseDirectory(f.getAbsolutePath());
+                else                  openFile(f.getAbsolutePath());
             }
         });
-        
+
         fileListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                String path = fileListPaths.get(position);
-                showFileOptionsDialog(path);
+            public boolean onItemLongClick(AdapterView<?> p, View v, int pos, long id) {
+                showFileOptionsDialog(fileListPaths.get(pos));
                 return true;
             }
         });
-        
+
         btnNewFile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showCreateFileDialog();
-            }
+            @Override public void onClick(View v) { showCreateFileDialog(); }
         });
-        
+
         btnSave.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (editorLayout.getVisibility() == View.VISIBLE) {
-                    saveFile();
-                }
+            @Override public void onClick(View v) {
+                if (editorLayout.getVisibility() == View.VISIBLE) saveFile();
             }
         });
-        
+
         btnUndo.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (editText != null) {
-                    android.text.method.TextKeyListener.clear(editText.getText());
-                }
-            }
+            @Override public void onClick(View v) { performUndo(); }
         });
-        
+
         btnRedo.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("temp", "");
-                clipboard.setPrimaryClip(clip);
-            }
+            @Override public void onClick(View v) { performRedo(); }
         });
-        
+
+        btnSearchNext.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { searchNext(); }
+        });
+
+        btnSearchPrev.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { searchPrev(); }
+        });
+
+        btnPlayPreview.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { toggleWebView(); }
+        });
+
         searchEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
+            @Override public void afterTextChanged(Editable s) {}
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) {
                 lastSearchQuery = s.toString();
                 lastSearchIndex = -1;
-                if (!lastSearchQuery.isEmpty()) {
-                    searchNext();
-                } else {
-                    editText.setSelection(0);
-                }
-            }
-            
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
-        
-        btnSearchNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                searchNext();
-            }
-        });
-        
-        btnSearchPrev.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                searchPrev();
+                if (!lastSearchQuery.isEmpty()) searchNext();
             }
         });
     }
-    
+
+
+private void browseDirectory(String path) {
+    currentDirectoryPath = path;
+    File dir = new File(path);
+    if (!dir.exists() || !dir.isDirectory()) {
+        toast("Cannot access: " + path);
+        return;
+    }
+
+    fileListItems.clear();
+    fileListPaths.clear();
+
+    File parent = dir.getParentFile();
+    if (parent != null) {
+        fileListItems.add(".. (Parent Directory)");
+        fileListPaths.add(parent.getAbsolutePath());
+    }
+
+    File[] files = dir.listFiles();
+    if (files != null) {
+        Arrays.sort(files, new Comparator<File>() {
+            @Override public int compare(File a, File b) {
+                if (a.isDirectory() != b.isDirectory())
+                    return a.isDirectory() ? -1 : 1;
+                return a.getName().compareToIgnoreCase(b.getName());
+            }
+        });
+        for (File f : files) {
+            if (f.canRead()) {
+                fileListItems.add(f.getName());   // plain name, no emoji
+                fileListPaths.add(f.getAbsolutePath());
+            }
+        }
+    }
+
+    fileListAdapter.notifyDataSetChanged();
+    updateTitle();
+}
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  Editor
+    // ────────────────────────────────────────────────────────────────────────
+
     private void setupEditor() {
         editText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (!isModified) {
-                    isModified = true;
-                    updateTitle();
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                if (!isUndoRedoAction) {
+                    pushUndo(s.toString());
                 }
+            }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) {
+                if (!isModified) { isModified = true; updateTitle(); }
                 autoSaveHandler.removeCallbacks(autoSaveRunnable);
                 autoSaveHandler.postDelayed(autoSaveRunnable, 3000);
             }
-            
-            @Override
-            public void afterTextChanged(Editable s) {}
+            @Override public void afterTextChanged(Editable s) {}
         });
     }
-    
+
+    private void pushUndo(String state) {
+        if (undoStack.size() >= MAX_STACK) undoStack.pollFirst();
+        undoStack.push(state);
+        redoStack.clear();
+    }
+
+    private void performUndo() {
+        if (undoStack.isEmpty()) { toast("Nothing to undo"); return; }
+        isUndoRedoAction = true;
+        redoStack.push(editText.getText().toString());
+        String prev = undoStack.pop();
+        editText.setText(prev);
+        editText.setSelection(prev.length());
+        isUndoRedoAction = false;
+    }
+
+    private void performRedo() {
+        if (redoStack.isEmpty()) { toast("Nothing to redo"); return; }
+        isUndoRedoAction = true;
+        undoStack.push(editText.getText().toString());
+        String next = redoStack.pop();
+        editText.setText(next);
+        editText.setSelection(next.length());
+        isUndoRedoAction = false;
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  File I/O
+    // ────────────────────────────────────────────────────────────────────────
+
+    private void openFile(final String filePath) {
+        currentFilePath = filePath;
+        currentFile = new File(filePath);
+        if (!currentFile.exists()) { toast("File not found: " + filePath); return; }
+
+        showEditor();
+        showProgress(true);
+        undoStack.clear();
+        redoStack.clear();
+
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    final StringBuilder sb = new StringBuilder();
+                    BufferedReader br = new BufferedReader(new FileReader(currentFile));
+                    String line;
+                    while ((line = br.readLine()) != null) sb.append(line).append('\n');
+                    br.close();
+                    final String content = sb.toString();
+
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            isUndoRedoAction = true;
+                            editText.setText(content);
+                            isUndoRedoAction = false;
+                            isModified = false;
+                            updateTitle();
+                            updateFileInfo();
+                            showProgress(false);
+                            bottomBar.setVisibility(isHtmlFile(currentFile.getName())
+                                    ? View.VISIBLE : View.GONE);
+                        }
+                    });
+                } catch (final Exception e) {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            showProgress(false);
+                            toast("Error opening: " + e.getMessage());
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    private void saveFile() {
+        if (currentFile == null) { showSaveAsDialog(); return; }
+        showProgress(true);
+        final String content = editText.getText().toString();
+
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(currentFile));
+                    bw.write(content);
+                    bw.close();
+
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            isModified = false;
+                            updateTitle();
+                            updateFileInfo();
+                            showProgress(false);
+                            toast("Saved: " + currentFile.getName());
+                        }
+                    });
+                } catch (final Exception e) {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            showProgress(false);
+                            toast("Error saving: " + e.getMessage());
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    private void showSaveAsDialog() {
+        final EditText input = new EditText(this);
+        input.setHint("Enter filename");
+        new AlertDialog.Builder(this)
+                .setTitle("Save As")
+                .setView(input)
+                .setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        String name = input.getText().toString().trim();
+                        if (name.isEmpty()) { toast("Filename cannot be empty"); return; }
+                        currentFile = new File(currentDirectoryPath, name);
+                        currentFilePath = currentFile.getAbsolutePath();
+                        saveFile();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  Search
+    // ────────────────────────────────────────────────────────────────────────
+
+    private void searchNext() {
+        if (lastSearchQuery.isEmpty()) return;
+        String text = editText.getText().toString();
+        int idx = text.indexOf(lastSearchQuery, lastSearchIndex + 1);
+        if (idx >= 0) {
+            lastSearchIndex = idx;
+            editText.setSelection(idx, idx + lastSearchQuery.length());
+        } else {
+            toast("No more matches");
+            lastSearchIndex = -1;
+        }
+    }
+
+    private void searchPrev() {
+        if (lastSearchQuery.isEmpty()) return;
+        String text = editText.getText().toString();
+        int end = lastSearchIndex < 1 ? text.length() : lastSearchIndex - 1;
+        int idx = text.lastIndexOf(lastSearchQuery, end);
+        if (idx >= 0) {
+            lastSearchIndex = idx;
+            editText.setSelection(idx, idx + lastSearchQuery.length());
+        } else {
+            toast("No more matches");
+            lastSearchIndex = -1;
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  WebView / Preview
+    // ────────────────────────────────────────────────────────────────────────
+
     private void setupWebView() {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setLoadWithOverviewMode(true);
@@ -261,773 +470,453 @@ public class EditorActivity extends Activity {
         webView.getSettings().setBuiltInZoomControls(true);
         webView.getSettings().setDisplayZoomControls(false);
         webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
+            @Override public void onPageFinished(WebView v, String url) {
                 showProgress(false);
             }
         });
-        
-        Button btnCloseWebView = findViewById(R.id.btnCloseWebView);
-        if (btnCloseWebView != null) {
-            btnCloseWebView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    closeWebView();
-                }
+
+        Button btnClose = (Button) findViewById(R.id.btnCloseWebView);
+        if (btnClose != null) {
+            btnClose.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { closeWebView(); }
             });
         }
     }
-    
-    private void setupAutoSave() {
-        autoSaveRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (isModified && currentFile != null) {
-                    saveFile();
-                    showMessage("Auto-saved");
-                }
-            }
-        };
-    }
-    
-    private void closeWebView() {
-        if (webViewLayout != null) {
-            webViewLayout.setVisibility(View.GONE);
-            isWebViewVisible = false;
-            if (btnPlayPreview != null) {
-                btnPlayPreview.setImageResource(android.R.drawable.ic_media_play);
-            }
-            webView.loadUrl("about:blank");
-        }
-    }
-    
+
     private void toggleWebView() {
         if (isWebViewVisible) {
             closeWebView();
         } else {
             if (currentFile != null && isHtmlFile(currentFile.getName())) {
-                loadHtmlInWebView();
+                loadHtmlPreview();
                 webViewLayout.setVisibility(View.VISIBLE);
                 isWebViewVisible = true;
-                btnPlayPreview.setImageResource(android.R.drawable.ic_media_pause);
+                btnPlayPreview.setImageResource(R.drawable.ic_pause);
             } else {
-                showMessage("Please open an HTML file to preview");
+                toast("Open an HTML file to preview");
             }
         }
     }
-    
-    private boolean isHtmlFile(String fileName) {
-        String lowerName = fileName.toLowerCase();
-        return lowerName.endsWith(".html") || lowerName.endsWith(".htm");
+
+    private void closeWebView() {
+        webViewLayout.setVisibility(View.GONE);
+        isWebViewVisible = false;
+        btnPlayPreview.setImageResource(R.drawable.ic_play);
+        webView.loadUrl("about:blank");
     }
-    
-    private void loadHtmlInWebView() {
+
+    private void loadHtmlPreview() {
         String content = editText.getText().toString();
-        
         if (!content.toLowerCase().contains("<html")) {
-            content = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n" +
-                      "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
-                      "<title>" + currentFile.getName() + "</title>\n</head>\n<body>\n" +
-                      content + "\n</body>\n</html>";
+            content = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n"
+                    + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n"
+                    + "<title>" + currentFile.getName() + "</title>\n</head>\n<body>\n"
+                    + content + "\n</body>\n</html>";
         }
-        
-        String baseUrl = "file://" + currentFile.getParent() + "/";
-        webView.loadDataWithBaseURL(baseUrl, content, "text/html", "UTF-8", null);
         showProgress(true);
+        webView.loadDataWithBaseURL(
+                "file://" + currentFile.getParent() + "/",
+                content, "text/html", "UTF-8", null);
     }
-    
-    private void showFileBrowser() {
-        fileBrowserLayout.setVisibility(View.VISIBLE);
-        editorLayout.setVisibility(View.GONE);
-        if (webViewLayout != null) {
-            webViewLayout.setVisibility(View.GONE);
-            isWebViewVisible = false;
-        }
-        updateTitle();
+
+    private boolean isHtmlFile(String name) {
+        String n = name.toLowerCase();
+        return n.endsWith(".html") || n.endsWith(".htm");
     }
-    
-    private void showEditor() {
-        fileBrowserLayout.setVisibility(View.GONE);
-        editorLayout.setVisibility(View.VISIBLE);
-        if (webViewLayout != null) {
-            webViewLayout.setVisibility(View.GONE);
-            isWebViewVisible = false;
-            if (btnPlayPreview != null) {
-                btnPlayPreview.setImageResource(android.R.drawable.ic_media_play);
-            }
-        }
-        updateTitle();
-    }
-    
-    private void browseDirectory(String path) {
-        currentDirectoryPath = path;
-        File dir = new File(path);
-        
-        if (!dir.exists() || !dir.isDirectory()) {
-            showMessage("Cannot access directory: " + path);
-            return;
-        }
-        
-        fileListItems.clear();
-        fileListPaths.clear();
-        
-        if (!path.equals(Environment.getExternalStorageDirectory().getAbsolutePath()) && 
-            !path.equals(getFilesDir().getAbsolutePath())) {
-            File parent = dir.getParentFile();
-            if (parent != null) {
-                fileListItems.add(".. (Parent Directory)");
-                fileListPaths.add(parent.getAbsolutePath());
-            }
-        }
-        
-        File[] files = dir.listFiles();
-        if (files != null) {
-            Arrays.sort(files, new Comparator<File>() {
-                @Override
-                public int compare(File f1, File f2) {
-                    if (f1.isDirectory() && !f2.isDirectory()) return -1;
-                    if (!f1.isDirectory() && f2.isDirectory()) return 1;
-                    return f1.getName().compareToIgnoreCase(f2.getName());
-                }
-            });
-            
-            for (File file : files) {
-                if (file.canRead()) {
-                    String name = file.isDirectory() ? "📁 " + file.getName() : "📄 " + file.getName();
-                    fileListItems.add(name);
-                    fileListPaths.add(file.getAbsolutePath());
-                }
-            }
-        }
-        
-        fileListAdapter.notifyDataSetChanged();
-        updateTitle();
-    }
-    
-    private void openFile(final String filePath) {
-        currentFilePath = filePath;
-        currentFile = new File(filePath);
-        
-        if (!currentFile.exists()) {
-            showMessage("File does not exist: " + filePath);
-            return;
-        }
-        
-        showEditor();
-        showProgress(true);
-        closeWebView();
-        
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    StringBuilder content = new StringBuilder();
-                    BufferedReader reader = new BufferedReader(new FileReader(currentFile));
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        content.append(line).append("\n");
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  File operations dialogs
+    // ────────────────────────────────────────────────────────────────────────
+
+    private void showCreateFileDialog() {
+        final EditText input = new EditText(this);
+        input.setHint("e.g. index.php");
+        new AlertDialog.Builder(this)
+                .setTitle("New File")
+                .setView(input)
+                .setPositiveButton("Create", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        String name = input.getText().toString().trim();
+                        if (name.isEmpty()) { toast("Name cannot be empty"); return; }
+                        final File f = new File(currentDirectoryPath, name);
+                        if (f.exists()) { toast("Already exists"); return; }
+                        try {
+                            f.createNewFile();
+                            browseDirectory(currentDirectoryPath);
+                            askOpenNewFile(f);
+                        } catch (Exception e) { toast("Error: " + e.getMessage()); }
                     }
-                    reader.close();
-                    
-                    final String fileContent = content.toString();
-                    
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            editText.setText(fileContent);
-                            isModified = false;
-                            updateTitle();
-                            showProgress(false);
-                            
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                            fileInfo.setText("File: " + currentFile.getName() + " | Size: " + 
-                                           formatFileSize(currentFile.length()) + " | Modified: " + 
-                                           sdf.format(new Date(currentFile.lastModified())));
-                            
-                            if (isHtmlFile(currentFile.getName())) {
-                                bottomBar.setVisibility(View.VISIBLE);
-                            } else {
-                                bottomBar.setVisibility(View.GONE);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void askOpenNewFile(final File f) {
+        new AlertDialog.Builder(this)
+                .setTitle("File Created")
+                .setMessage("Open " + f.getName() + "?")
+                .setPositiveButton("Open", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { openFile(f.getAbsolutePath()); }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showCreateDirectoryDialog() {
+        final EditText input = new EditText(this);
+        input.setHint("Directory name");
+        new AlertDialog.Builder(this)
+                .setTitle("New Folder")
+                .setView(input)
+                .setPositiveButton("Create", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        String name = input.getText().toString().trim();
+                        if (name.isEmpty()) { toast("Name cannot be empty"); return; }
+                        File dir = new File(currentDirectoryPath, name);
+                        if (dir.exists()) { toast("Already exists"); return; }
+                        if (dir.mkdir()) { toast("Folder created"); browseDirectory(currentDirectoryPath); }
+                        else              toast("Failed to create folder");
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showFileOptionsDialog(final String filePath) {
+        final File f = new File(filePath);
+        String[] opts = f.isDirectory()
+                ? new String[]{"Open", "Rename", "Delete", "New File", "New Folder", "Import Files"}
+                : new String[]{"Open", "Rename", "Delete", "Share", "Info", "Copy Path"};
+
+        new AlertDialog.Builder(this)
+                .setTitle(f.getName())
+                .setItems(opts, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int which) {
+                        if (f.isDirectory()) {
+                            switch (which) {
+                                case 0: browseDirectory(filePath);        break;
+                                case 1: showRenameDialog(f);             break;
+                                case 2: confirmDelete(f);                break;
+                                case 3: showCreateFileDialog();          break;
+                                case 4: showCreateDirectoryDialog();     break;
+                                case 5: importMultipleFiles();           break;
+                            }
+                        } else {
+                            switch (which) {
+                                case 0: openFile(filePath);              break;
+                                case 1: showRenameDialog(f);             break;
+                                case 2: confirmDelete(f);                break;
+                                case 3: shareFile(f);                    break;
+                                case 4: showFileInfo(f);                 break;
+                                case 5: copyToClipboard(f.getAbsolutePath()); break;
                             }
                         }
-                    });
-                } catch (final Exception e) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            showProgress(false);
-                            showMessage("Error opening file: " + e.getMessage());
-                        }
-                    });
-                }
-            }
-        }).start();
-    }
-    
-    private void saveFile() {
-        if (currentFile == null) {
-            showSaveAsDialog();
-            return;
-        }
-        
-        showProgress(true);
-        final String content = editText.getText().toString();
-        
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(currentFile));
-                    writer.write(content);
-                    writer.close();
-                    
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            isModified = false;
-                            updateTitle();
-                            showProgress(false);
-                            showMessage("File saved: " + currentFile.getName());
-                            
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                            fileInfo.setText("File: " + currentFile.getName() + " | Size: " + 
-                                           formatFileSize(currentFile.length()) + " | Modified: " + 
-                                           sdf.format(new Date(currentFile.lastModified())));
-                        }
-                    });
-                } catch (final Exception e) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            showProgress(false);
-                            showMessage("Error saving file: " + e.getMessage());
-                        }
-                    });
-                }
-            }
-        }).start();
-    }
-    
-    private void showSaveAsDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Save As");
-        
-        final EditText input = new EditText(this);
-        input.setHint("Enter filename");
-        builder.setView(input);
-        
-        builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String filename = input.getText().toString();
-                if (filename.isEmpty()) {
-                    showMessage("Filename cannot be empty");
-                    return;
-                }
-                currentFile = new File(currentDirectoryPath, filename);
-                currentFilePath = currentFile.getAbsolutePath();
-                saveFile();
-            }
-        });
-        
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
-    }
-    
-    private void importMultipleFiles() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("*/*");
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        startActivityForResult(Intent.createChooser(intent, "Select Files"), REQUEST_IMPORT_FILES);
-    }
-    
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        
-        if (requestCode == REQUEST_IMPORT_FILES && resultCode == RESULT_OK && data != null) {
-            ClipData clipData = data.getClipData();
-            
-            if (clipData != null) {
-                for (int i = 0; i < clipData.getItemCount(); i++) {
-                    Uri uri = clipData.getItemAt(i).getUri();
-                    if (uri != null) {
-                        copyFileToDirectory(uri);
                     }
-                }
-                showMessage("Importing " + clipData.getItemCount() + " files...");
-            } else {
-                Uri uri = data.getData();
-                if (uri != null) {
-                    copyFileToDirectory(uri);
-                }
-            }
+                })
+                .show();
+    }
+
+    private void showRenameDialog(final File f) {
+        final EditText input = new EditText(this);
+        input.setText(f.getName());
+        input.selectAll();
+        new AlertDialog.Builder(this)
+                .setTitle("Rename")
+                .setView(input)
+                .setPositiveButton("Rename", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        String name = input.getText().toString().trim();
+                        if (name.isEmpty()) { toast("Name cannot be empty"); return; }
+                        File dest = new File(f.getParent(), name);
+                        if (f.renameTo(dest)) {
+                            toast("Renamed to: " + name);
+                            browseDirectory(currentDirectoryPath);
+                        } else {
+                            toast("Rename failed");
+                        }
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void confirmDelete(final File f) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete")
+                .setMessage("Delete " + f.getName() + "?")
+                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { deleteRecursive(f); }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deleteRecursive(File f) {
+        if (f.isDirectory()) {
+            File[] children = f.listFiles();
+            if (children != null) for (File c : children) deleteRecursive(c);
+        }
+        if (f.delete()) {
+            toast("Deleted: " + f.getName());
+            browseDirectory(currentDirectoryPath);
+        } else {
+            toast("Delete failed: " + f.getName());
         }
     }
-    
-    private void copyFileToDirectory(final Uri uri) {
+
+    private void shareFile(File f) {
+        Intent i = new Intent(Intent.ACTION_SEND);
+        i.setType("text/plain");
+        i.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(f));
+        i.putExtra(Intent.EXTRA_TEXT, "File: " + f.getName());
+        startActivity(Intent.createChooser(i, "Share"));
+    }
+
+    private void showFileInfo(File f) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String msg = "Name: "     + f.getName()              + "\n"
+                   + "Path: "     + f.getAbsolutePath()      + "\n"
+                   + "Size: "     + formatSize(f.length())   + "\n"
+                   + "Modified: " + sdf.format(new Date(f.lastModified())) + "\n"
+                   + "Read: "     + f.canRead()              + " | Write: " + f.canWrite();
+        new AlertDialog.Builder(this)
+                .setTitle("File Info")
+                .setMessage(msg)
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private void copyToClipboard(String text) {
+        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        cm.setPrimaryClip(ClipData.newPlainText("path", text));
+        toast("Path copied");
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  Import files
+    // ────────────────────────────────────────────────────────────────────────
+
+    private void importMultipleFiles() {
+        Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+        i.setType("*/*");
+        i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        i.addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(Intent.createChooser(i, "Select Files"), REQUEST_IMPORT);
+    }
+
+    @Override
+    protected void onActivityResult(int req, int res, Intent data) {
+        super.onActivityResult(req, res, data);
+        if (req != REQUEST_IMPORT || res != RESULT_OK || data == null) return;
+
+        ClipData clip = data.getClipData();
+        if (clip != null) {
+            for (int i = 0; i < clip.getItemCount(); i++) {
+                Uri uri = clip.getItemAt(i).getUri();
+                if (uri != null) copyUriToDirectory(uri);
+            }
+        } else {
+            Uri uri = data.getData();
+            if (uri != null) copyUriToDirectory(uri);
+        }
+    }
+
+    private void copyUriToDirectory(final Uri uri) {
         showProgress(true);
-        
         new Thread(new Runnable() {
-            @Override
-            public void run() {
+            @Override public void run() {
                 try {
-                  final String fileName = getFileName(uri);
-                   final File destFile = new File(currentDirectoryPath, fileName);
-                    
-                    if (destFile.exists()) {
+                    final String name = resolveFileName(uri);
+                    final File dest  = new File(currentDirectoryPath, name);
+
+                    if (dest.exists()) {
                         runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                showOverwriteDialog(destFile, uri);
+                            @Override public void run() {
+                                showProgress(false);
+                                showOverwriteDialog(dest, uri);
                             }
                         });
                         return;
                     }
-                    
-                    InputStream inputStream = getContentResolver().openInputStream(uri);
-                    OutputStream outputStream = new FileOutputStream(destFile);
-                    
-                    byte[] buffer = new byte[8192];
-                    int length;
-                    while ((length = inputStream.read(buffer)) > 0) {
-                        outputStream.write(buffer, 0, length);
-                    }
-                    
-                    outputStream.close();
-                    inputStream.close();
-                    
+                    writeUriToFile(uri, dest);
                     runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            showMessage("Imported: " + fileName);
-                            browseDirectory(currentDirectoryPath);
+                        @Override public void run() {
                             showProgress(false);
+                            toast("Imported: " + name);
+                            browseDirectory(currentDirectoryPath);
                         }
                     });
                 } catch (final Exception e) {
                     runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            showMessage("Error importing: " + e.getMessage());
+                        @Override public void run() {
                             showProgress(false);
+                            toast("Import failed: " + e.getMessage());
                         }
                     });
                 }
             }
         }).start();
     }
-    
-    private void showOverwriteDialog(final File file, final Uri uri) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("File Exists");
-        builder.setMessage(file.getName() + " already exists. Overwrite?");
-        builder.setPositiveButton("Overwrite", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                copyFileToDirectory(uri);
-            }
-        });
-        builder.setNegativeButton("Skip", null);
-        builder.show();
-        showProgress(false);
+
+    private void writeUriToFile(Uri uri, File dest) throws IOException {
+        InputStream  in  = getContentResolver().openInputStream(uri);
+        OutputStream out = new FileOutputStream(dest);
+        byte[] buf = new byte[8192];
+        int len;
+        while ((len = in.read(buf)) > 0) out.write(buf, 0, len);
+        out.close();
+        in.close();
     }
-    
-    private String getFileName(Uri uri) {
-        String fileName = null;
-        if (uri.getScheme().equals("content")) {
-            Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                if (nameIndex != -1) {
-                    fileName = cursor.getString(nameIndex);
-                }
-                cursor.close();
-            }
-        }
-        
-        if (fileName == null) {
-            fileName = uri.getPath();
-            int cut = fileName.lastIndexOf('/');
-            if (cut != -1) {
-                fileName = fileName.substring(cut + 1);
-            }
-        }
-        
-        return fileName;
+
+    private void showOverwriteDialog(final File dest, final Uri uri) {
+        new AlertDialog.Builder(this)
+                .setTitle("File Exists")
+                .setMessage(dest.getName() + " already exists. Overwrite?")
+                .setPositiveButton("Overwrite", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { copyUriToDirectory(uri); }
+                })
+                .setNegativeButton("Skip", null)
+                .show();
     }
-    
-    private void showCreateFileDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Create New File");
-        
-        final EditText input = new EditText(this);
-        input.setHint("Enter filename (e.g., index.php)");
-        builder.setView(input);
-        
-        builder.setPositiveButton("Create", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                final String filename = input.getText().toString();
-                if (filename.isEmpty()) {
-                    showMessage("Filename cannot be empty");
-                    return;
+
+    private String resolveFileName(Uri uri) {
+        if ("content".equals(uri.getScheme())) {
+            Cursor c = getContentResolver().query(uri, null, null, null, null);
+            if (c != null && c.moveToFirst()) {
+                int col = c.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (col != -1) {
+                    String name = c.getString(col);
+                    c.close();
+                    return name;
                 }
-                
-                final File newFile = new File(currentDirectoryPath, filename);
-                if (newFile.exists()) {
-                    showMessage("File already exists");
-                    return;
-                }
-                
-                try {
-                    newFile.createNewFile();
-                    showMessage("File created: " + filename);
-                    browseDirectory(currentDirectoryPath);
-                    
-                    AlertDialog.Builder openBuilder = new AlertDialog.Builder(EditorActivity.this);
-                    openBuilder.setTitle("File Created");
-                    openBuilder.setMessage("Do you want to open " + filename + "?");
-                    openBuilder.setPositiveButton("Open", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            openFile(newFile.getAbsolutePath());
-                        }
-                    });
-                    openBuilder.setNegativeButton("Cancel", null);
-                    openBuilder.show();
-                } catch (Exception e) {
-                    showMessage("Error creating file: " + e.getMessage());
-                }
-            }
-        });
-        
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
-    }
-    
-    private void showCreateDirectoryDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Create New Directory");
-        
-        final EditText input = new EditText(this);
-        input.setHint("Enter directory name");
-        builder.setView(input);
-        
-        builder.setPositiveButton("Create", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String dirname = input.getText().toString();
-                if (dirname.isEmpty()) {
-                    showMessage("Directory name cannot be empty");
-                    return;
-                }
-                
-                File newDir = new File(currentDirectoryPath, dirname);
-                if (newDir.exists()) {
-                    showMessage("Directory already exists");
-                    return;
-                }
-                
-                if (newDir.mkdir()) {
-                    showMessage("Directory created: " + dirname);
-                    browseDirectory(currentDirectoryPath);
-                } else {
-                    showMessage("Error creating directory");
-                }
-            }
-        });
-        
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
-    }
-    
-    private void showFileOptionsDialog(final String filePath) {
-        final File file = new File(filePath);
-        String[] options;
-        
-        if (file.isDirectory()) {
-            options = new String[]{"Open", "Delete", "Rename", "Create File", "Create Directory", "Import Files"};
-        } else {
-            options = new String[]{"Open", "Delete", "Rename", "Share", "Get Info", "Copy Path"};
-        }
-        
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(file.getName());
-        builder.setItems(options, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                switch (which) {
-                    case 0:
-                        if (file.isDirectory()) {
-                            browseDirectory(filePath);
-                        } else {
-                            openFile(filePath);
-                        }
-                        break;
-                    case 1:
-                        confirmDelete(file);
-                        break;
-                    case 2:
-                        showRenameDialog(file);
-                        break;
-                    case 3:
-                        if (file.isDirectory()) {
-                            showCreateFileDialog();
-                        } else {
-                            shareFile(file);
-                        }
-                        break;
-                    case 4:
-                        if (file.isDirectory()) {
-                            showCreateDirectoryDialog();
-                        } else {
-                            showFileInfo(file);
-                        }
-                        break;
-                    case 5:
-                        if (!file.isDirectory()) {
-                            copyToClipboard(file.getAbsolutePath());
-                        } else {
-                            importMultipleFiles();
-                        }
-                        break;
-                }
-            }
-        });
-        builder.show();
-    }
-    
-    private void copyToClipboard(String text) {
-        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("path", text);
-        clipboard.setPrimaryClip(clip);
-        showMessage("Path copied to clipboard");
-    }
-    
-    private void confirmDelete(final File file) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Delete");
-        builder.setMessage("Are you sure you want to delete " + file.getName() + "?");
-        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                deleteFileRecursive(file);
-            }
-        });
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
-    }
-    
-    private void deleteFileRecursive(File file) {
-        if (file.isDirectory()) {
-            File[] files = file.listFiles();
-            if (files != null) {
-                for (File child : files) {
-                    deleteFileRecursive(child);
-                }
+                c.close();
             }
         }
-        
-        if (file.delete()) {
-            showMessage("Deleted: " + file.getName());
-            browseDirectory(currentDirectoryPath);
-        } else {
-            showMessage("Error deleting: " + file.getName());
-        }
+        String path = uri.getPath();
+        int cut = path.lastIndexOf('/');
+        return cut >= 0 ? path.substring(cut + 1) : path;
     }
-    
-    private void showRenameDialog(final File file) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Rename");
-        
-        final EditText input = new EditText(this);
-        input.setText(file.getName());
-        input.selectAll();
-        builder.setView(input);
-        
-        builder.setPositiveButton("Rename", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String newName = input.getText().toString();
-                if (newName.isEmpty()) {
-                    showMessage("Name cannot be empty");
-                    return;
-                }
-                
-                File newFile = new File(file.getParent(), newName);
-                if (file.renameTo(newFile)) {
-                    showMessage("Renamed to: " + newName);
-                    browseDirectory(currentDirectoryPath);
-                } else {
-                    showMessage("Error renaming file");
-                }
-            }
-        });
-        
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  UI helpers
+    // ────────────────────────────────────────────────────────────────────────
+
+    private void showFileBrowser() {
+        fileBrowserLayout.setVisibility(View.VISIBLE);
+        editorLayout.setVisibility(View.GONE);
+        webViewLayout.setVisibility(View.GONE);
+        isWebViewVisible = false;
+        currentFile = null;
+        updateTitle();
     }
-    
-    private void shareFile(File file) {
-        Intent shareIntent = new Intent(Intent.ACTION_SEND);
-        shareIntent.setType("text/plain");
-        shareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
-        shareIntent.putExtra(Intent.EXTRA_TEXT, "Check out this file: " + file.getName());
-        startActivity(Intent.createChooser(shareIntent, "Share File"));
+
+    private void showEditor() {
+        fileBrowserLayout.setVisibility(View.GONE);
+        editorLayout.setVisibility(View.VISIBLE);
+        webViewLayout.setVisibility(View.GONE);
+        isWebViewVisible = false;
+        btnPlayPreview.setImageResource(R.drawable.ic_play);
+        updateTitle();
     }
-    
-    private void showFileInfo(File file) {
-        StringBuilder info = new StringBuilder();
-        info.append("Name: ").append(file.getName()).append("\n");
-        info.append("Path: ").append(file.getAbsolutePath()).append("\n");
-        info.append("Size: ").append(formatFileSize(file.length())).append("\n");
-        info.append("Modified: ").append(new Date(file.lastModified())).append("\n");
-        info.append("Readable: ").append(file.canRead()).append("\n");
-        info.append("Writable: ").append(file.canWrite()).append("\n");
-        
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("File Info");
-        builder.setMessage(info.toString());
-        builder.setPositiveButton("OK", null);
-        builder.show();
-    }
-    
-    private String formatFileSize(long size) {
-        if (size < 1024) return size + " B";
-        if (size < 1024 * 1024) return String.format("%.2f KB", size / 1024.0);
-        if (size < 1024 * 1024 * 1024) return String.format("%.2f MB", size / (1024.0 * 1024));
-        return String.format("%.2f GB", size / (1024.0 * 1024 * 1024));
-    }
-    
-    private void searchNext() {
-        if (lastSearchQuery.isEmpty()) return;
-        
-        String text = editText.getText().toString();
-        int start = lastSearchIndex + 1;
-        int index = text.indexOf(lastSearchQuery, start);
-        
-        if (index >= 0) {
-            lastSearchIndex = index;
-            editText.setSelection(index, index + lastSearchQuery.length());
-        } else {
-            showMessage("No more matches");
-            lastSearchIndex = -1;
-        }
-    }
-    
-    private void searchPrev() {
-        if (lastSearchQuery.isEmpty()) return;
-        
-        String text = editText.getText().toString();
-        int start = lastSearchIndex - 1;
-        int index = text.lastIndexOf(lastSearchQuery, start);
-        
-        if (index >= 0) {
-            lastSearchIndex = index;
-            editText.setSelection(index, index + lastSearchQuery.length());
-        } else {
-            showMessage("No more matches");
-            lastSearchIndex = -1;
-        }
-    }
-    
+
     private void updateTitle() {
         if (currentFile != null) {
-            String title = currentFile.getName();
-            if (isModified) {
-                title = "* " + title;
-            }
-            setTitle(title);
+            setTitle((isModified ? "* " : "") + currentFile.getName());
         } else {
-            setTitle("File Editor - " + currentDirectoryPath);
+            setTitle("Editor — " + (currentDirectoryPath != null
+                    ? new File(currentDirectoryPath).getName() : ""));
         }
     }
-    
+
+    private void updateFileInfo() {
+        if (currentFile == null) { fileInfo.setText(""); return; }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        fileInfo.setText(currentFile.getName()
+                + "  |  " + formatSize(currentFile.length())
+                + "  |  " + sdf.format(new Date(currentFile.lastModified())));
+    }
+
     private void showProgress(final boolean show) {
         runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (show) {
-                    progressBar.setVisibility(View.VISIBLE);
-                } else {
-                    progressBar.setVisibility(View.GONE);
-                }
+            @Override public void run() {
+                progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
             }
         });
     }
-    
-    private void showMessage(final String message) {
+
+    private void toast(final String msg) {
         runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(EditorActivity.this, message, Toast.LENGTH_SHORT).show();
+            @Override public void run() {
+                Toast.makeText(EditorActivity.this, msg, Toast.LENGTH_SHORT).show();
             }
         });
     }
-    
+
+    private String formatSize(long bytes) {
+        if (bytes < 1024)            return bytes + " B";
+        if (bytes < 1024 * 1024)    return String.format("%.1f KB", bytes / 1024.0);
+        return                              String.format("%.1f MB", bytes / (1024.0 * 1024));
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  Menu
+    // ────────────────────────────────────────────────────────────────────────
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(0, 1, 0, "New File").setIcon(android.R.drawable.ic_menu_add);
-        menu.add(0, 2, 0, "New Folder").setIcon(android.R.drawable.ic_menu_save);
-        menu.add(0, 3, 0, "Import Files").setIcon(android.R.drawable.ic_menu_upload);
-        menu.add(0, 4, 0, "Refresh").setIcon(android.R.drawable.ic_menu_recent_history);
-        menu.add(0, 5, 0, "Exit Editor").setIcon(android.R.drawable.ic_menu_close_clear_cancel);
+        menu.add(0, 1, 0, "New File")    .setIcon(R.drawable.ic_add);
+        menu.add(0, 2, 0, "New Folder")  .setIcon(R.drawable.ic_menu_folder);
+        menu.add(0, 3, 0, "Import Files").setIcon(R.drawable.ic_upload);
+        menu.add(0, 4, 0, "Refresh")     .setIcon(R.drawable.ic_history);
+        menu.add(0, 5, 0, "Exit Editor") .setIcon(R.drawable.ic_close);
         return true;
     }
-    
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        
-        switch (id) {
-            case 1:
-                showCreateFileDialog();
-                break;
-            case 2:
-                showCreateDirectoryDialog();
-                break;
-            case 3:
-                importMultipleFiles();
-                break;
-            case 4:
-                browseDirectory(currentDirectoryPath);
-                break;
-            case 5:
-                finish();
-                break;
+        switch (item.getItemId()) {
+            case 1: showCreateFileDialog();      break;
+            case 2: showCreateDirectoryDialog(); break;
+            case 3: importMultipleFiles();        break;
+            case 4: if (currentDirectoryPath != null) browseDirectory(currentDirectoryPath); break;
+            case 5: finish();                    break;
         }
-        
-        return super.onOptionsItemSelected(item);
+        return true;
     }
-    
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  Back press
+    // ────────────────────────────────────────────────────────────────────────
+
     @Override
     public void onBackPressed() {
+        if (isWebViewVisible) {
+            closeWebView();
+            return;
+        }
         if (editorLayout.getVisibility() == View.VISIBLE) {
-            if (isWebViewVisible) {
-                closeWebView();
-            } else if (isModified) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Unsaved Changes");
-                builder.setMessage("Do you want to save before leaving?");
-                builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        saveFile();
-                        showFileBrowser();
-                    }
-                });
-                builder.setNegativeButton("Discard", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        showFileBrowser();
-                    }
-                });
-                builder.setNeutralButton("Cancel", null);
-                builder.show();
+            if (isModified) {
+                new AlertDialog.Builder(this)
+                        .setTitle("Unsaved Changes")
+                        .setMessage("Save before leaving?")
+                        .setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                            @Override public void onClick(DialogInterface d, int w) {
+                                saveFile();
+                                showFileBrowser();
+                                browseDirectory(currentDirectoryPath);
+                            }
+                        })
+                        .setNegativeButton("Discard", new DialogInterface.OnClickListener() {
+                            @Override public void onClick(DialogInterface d, int w) {
+                                showFileBrowser();
+                                browseDirectory(currentDirectoryPath);
+                            }
+                        })
+                        .setNeutralButton("Cancel", null)
+                        .show();
             } else {
                 showFileBrowser();
+                browseDirectory(currentDirectoryPath);
             }
         } else {
             super.onBackPressed();
