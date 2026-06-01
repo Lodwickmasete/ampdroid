@@ -1,0 +1,10 @@
+idk if this is normal
+[Thu May 21 22:49:45.591979 2026] [ssl:warn] [pid 11790:tid 11790] AH01909: 127.0.0.1:8443:0 server certificate does NOT include an ID which matches the server name
+[Thu May 21 22:49:45.603537 2026] [ssl:warn] [pid 11791:tid 11791] AH01873: Init: Session Cache is not configured [hint: SSLSessionCache]
+[Thu May 21 22:49:45.605363 2026] [ssl:warn] [pid 11791:tid 11791] AH01909: 127.0.0.1:8443:0 server certificate does NOT include an ID which matches the server name
+[Thu May 21 22:49:45.609068 2026] [mpm_worker:notice] [pid 11791:tid 11791] AH00292: Apache/2.4.66 (Unix) OpenSSL/3.6.1 configured -- resuming normal operations
+[Thu May 21 22:49:45.609138 2026] [core:notice] [pid 11791:tid 11791] AH00094: Command line: '/data/data/com.lodwickmasete.php/files/Apache/bin/httpd -f /data/data/com.lodwickmasete.php/files/Apache/apache2/httpd.conf'
+
+i tried to add:
+SSLSessionCache shmcb:/tmp/ssl_gcache_data(512000)
+to remove the session cache warning,but still not workig
