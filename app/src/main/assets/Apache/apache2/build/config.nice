@@ -1,0 +1,67 @@
+#!/data/data/com.termux/files/usr/bin/sh
+#
+# Created by configure
+
+CC="aarch64-linux-android-clang"; export CC
+CFLAGS=" -fstack-protector-strong -Oz"; export CFLAGS
+CPPFLAGS=" -isystem/data/data/com.termux/files/usr/include/c++/v1 -isystem/data/data/com.termux/files/usr/include"; export CPPFLAGS
+LDFLAGS="-L/data/data/com.termux/files/usr/lib -Wl,-rpath=/data/data/com.termux/files/usr/lib -Wl,--enable-new-dtags -Wl,--as-needed -Wl,-z,relro,-z,now -Wl,--no-as-needed,-landroid-support,--as-needed -lapr-1 -laprutil-1 -L/home/builder/.termux-build/apache2/src/libdummy -Wl,--as-needed,-ldummy-mod_cache,-ldummy-mod_dav,-ldummy-mod_proxy,-ldummy-mod_session,-ldummy-mod_watchdog -Wl,-rpath=/data/data/com.termux/files/usr/libexec/apache2"; export LDFLAGS
+"/home/builder/.termux-build/apache2/src/configure" \
+"--disable-dependency-tracking" \
+"--prefix=/data/data/com.termux/files/usr" \
+"--libdir=/data/data/com.termux/files/usr/lib" \
+"--includedir=/data/data/com.termux/files/usr/include" \
+"--sbindir=/data/data/com.termux/files/usr/bin" \
+"--disable-rpath" \
+"--disable-rpath-hack" \
+"--host=aarch64-linux-android" \
+"--with-apr=/data/data/com.termux/files/usr" \
+"--with-apr-util=/data/data/com.termux/files/usr" \
+"--with-pcre=/data/data/com.termux/files/usr" \
+"--enable-suexec" \
+"--enable-layout=Termux" \
+"--enable-so" \
+"--enable-authnz-fcgi" \
+"--enable-cache" \
+"--enable-disk-cache" \
+"--enable-mem-cache" \
+"--enable-file-cache" \
+"--enable-ssl" \
+"--with-ssl" \
+"--enable-deflate" \
+"--enable-cgi" \
+"--enable-cgid" \
+"--enable-proxy" \
+"--enable-proxy-connect" \
+"--enable-proxy-http" \
+"--enable-proxy-ftp" \
+"--enable-dbd" \
+"--enable-imagemap" \
+"--enable-ident" \
+"--enable-cern-meta" \
+"--enable-http2" \
+"--enable-mpms-shared=all" \
+"--enable-modules=all" \
+"--enable-mods-shared=all" \
+"--disable-brotli" \
+"--disable-lua" \
+"--disable-mods-static" \
+"--disable-md" \
+"--with-port=8080" \
+"--with-sslport=8443" \
+"--enable-unixd" \
+"--without-libxml2" \
+"--libexecdir=/data/data/com.termux/files/usr/libexec/apache2" \
+"ac_cv_func_getpwnam=yes" \
+"ac_cv_have_threadsafe_pollset=no" \
+"ac_cv_prog_PCRE_CONFIG=pcre2-config" \
+"--disable-nls" \
+"--enable-shared" \
+"--enable-static" \
+"host_alias=aarch64-linux-android" \
+"CC=aarch64-linux-android-clang" \
+"CFLAGS= -fstack-protector-strong -Oz" \
+"LDFLAGS=-L/data/data/com.termux/files/usr/lib -Wl,-rpath=/data/data/com.termux/files/usr/lib -Wl,--enable-new-dtags -Wl,--as-needed -Wl,-z,relro,-z,now -Wl,--no-as-needed,-landroid-support,--as-needed -lapr-1 -laprutil-1 -L/home/builder/.termux-build/apache2/src/libdummy -Wl,--as-needed,-ldummy-mod_cache,-ldummy-mod_dav,-ldummy-mod_proxy,-ldummy-mod_session,-ldummy-mod_watchdog -Wl,-rpath=/data/data/com.termux/files/usr/libexec/apache2" \
+"CPPFLAGS= -isystem/data/data/com.termux/files/usr/include/c++/v1 -isystem/data/data/com.termux/files/usr/include" \
+"CPP=aarch64-linux-android-cpp" \
+"$@"
